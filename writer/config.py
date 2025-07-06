@@ -1,7 +1,7 @@
 # config.py
 
-NAVER_ID = ""
-NAVER_PW = ""
+NAVER_ID = "steve1145"
+NAVER_PW = "Sdf102365@!"
 
 UPLOAD_IMAGE_FILES = []
 
