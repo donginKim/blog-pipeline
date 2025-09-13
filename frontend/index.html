@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>Naver Monitor – Mini UI (with Results)</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- React 18 + Babel 7 -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; background:#f7f7f8; color:#111;}
+        h1 { margin: 0 0 16px; font-size: 20px; }
+        .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin:0 0 12px; }
+        .row { display:flex; gap:8px; margin: 8px 0; flex-wrap: wrap; }
+        input, select, button { padding:8px; border:1px solid #d1d5db; border-radius:8px; }
+        button { background:#111; color:#fff; cursor:pointer }
+        button.ghost { background:#fff; color:#111; border:1px solid #d1d5db; }
+        ul { list-style:none; padding:0; margin:0; }
+        li { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1px dashed #eee; gap:8px; }
+        code { background:#f1f5f9; padding:2px 6px; border-radius:6px; }
+        small { color:#6b7280; }
+        .chip { display:inline-flex; align-items:center; gap:6px; border:1px solid #e5e7eb; border-radius:999px; padding:4px 10px; }
+        .muted { color:#6b7280; }
+        .grid { display:grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 1000px) { .grid { grid-template-columns: 1fr 1fr; } }
+        table { width:100%; border-collapse: collapse; }
+        th, td { border-top:1px dashed #eee; padding:8px; font-size: 14px; vertical-align: top; }
+        th { text-align:left; white-space: nowrap; }
+        .nowrap { white-space: nowrap; }
+        .right { text-align:right; }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+    const API_BASE = 'http://localhost:8000/api'; // 필요 시 절대주소로 변경
+
+    async function api(path, init) {
+        const res = await fetch(API_BASE + path, {
+            headers: { 'Content-Type': 'application/json' },
+            ...init,
+        });
+        if (!res.ok) throw new Error(await res.text());
+        return res.status === 204 ? null : res.json();
+    }
+
+    function todayStr() {
+        const d = new Date();
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const dd = String(d.getDate()).padStart(2,'0');
+        return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+
+    function App() {
+        const [keywords, setKeywords] = React.useState([]);
+        const [blogs, setBlogs] = React.useState([]);
+        const [targets, setTargets] = React.useState([]);
+        const [results, setResults] = React.useState([]);
+        const [creds, setCreds] = React.useState([]);
+        const [credLogin, setCredLogin] = React.useState("");
+        const [credPw,   setCredPw]   = React.useState("");
+        const [credUrl,  setCredUrl]  = React.useState("");
+        const [credPhone, setCredPhone] = React.useState("");
+        const [credActive, setCredActive] = React.useState(true);
+
+        const [kw, setKw] = React.useState('');
+        const [blogName, setBlogName] = React.useState('');
+        const [blogUrl, setBlogUrl] = React.useState('');
+        const [selKw, setSelKw] = React.useState('');
+        const [selBlog, setSelBlog] = React.useState('');
+        const [msg, setMsg] = React.useState('');
+
+        // 결과 필터
+        const [resDate, setResDate] = React.useState(todayStr());
+        const [resFound, setResFound] = React.useState('all'); // all | found | notfound
+        const [resQuery, setResQuery] = React.useState('');    // keyword/blog/text 검색
+
+        const reloadBase = React.useCallback(async () => {
+            const [k, b, t, c] = await Promise.all([
+                api('/keywords'),
+                api('/blogs'),
+                api('/targets'),
+                api('/creds'),
+            ]);
+            setKeywords(k); setBlogs(b); setTargets(t); setCreds(c);
+        }, []);
+
+        const reloadResults = React.useCallback(async () => {
+            // 백엔드가 /results?date=YYYY-MM-DD&limit=200 지원한다고 가정
+            const params = new URLSearchParams();
+            if (resDate) params.set('date', resDate);
+            params.set('limit', '200');
+            const data = await api('/results?' + params.toString());
+            setResults(data);
+        }, [resDate]);
+
+        React.useEffect(() => { reloadBase().catch(e => setMsg(String(e))); }, [reloadBase]);
+        React.useEffect(() => { reloadResults().catch(e => setMsg(String(e))); }, [reloadResults]);
+
+        // --- CRUD actions ---
+        const addKeyword = async () => {
+            if (!kw.trim()) return;
+            await api('/keywords', { method:'POST', body: JSON.stringify({ keyword: kw.trim() }) });
+            setKw(''); setMsg('키워드 추가 완료'); reloadBase();
+        };
+        const addBlog = async () => {
+            if (!blogName.trim() || !blogUrl.trim()) return;
+            await api('/blogs', { method:'POST', body: JSON.stringify({ name: blogName.trim(), url_pattern: blogUrl.trim() }) });
+            setBlogName(''); setBlogUrl(''); setMsg('블로그 추가 완료'); reloadBase();
+        };
+        const addTarget = async () => {
+            if (!selKw || !selBlog) return;
+            await api('/targets', { method:'POST', body: JSON.stringify({ keyword_id: Number(selKw), blog_id: Number(selBlog) }) });
+            setSelKw(''); setSelBlog(''); setMsg('연결 추가 완료'); reloadBase();
+        };
+        const delKeyword = async (id) => { await api(`/keywords/${id}`, { method:'DELETE' }); reloadBase(); };
+        const delBlog = async (id) => { await api(`/blogs/${id}`, { method:'DELETE' }); reloadBase(); };
+        const delTarget = async (id) => { await api(`/targets/${id}`, { method:'DELETE' }); reloadBase(); };
+        const toggleKeyword = async (k) => { await api(`/keywords/${k.id}`, { method:'PATCH', body: JSON.stringify({ is_active: !k.is_active }) }); reloadBase(); };
+        const toggleBlog = async (b) => { await api(`/blogs/${b.id}`, { method:'PATCH', body: JSON.stringify({ is_active: !b.is_active }) }); reloadBase(); };
+
+        const runNow = async () => {
+            await api('/run', { method: 'POST' });
+            setMsg('배치(전체 매핑) 실행을 시작했습니다. (백그라운드)');
+        };
+
+        const addCred = async () => {
+            if (!credLogin.trim() || !credPw.trim() || !credUrl.trim()) return;
+            await api('/creds', { method:'POST', body: JSON.stringify({
+                login_id: credLogin.trim(),
+                password: credPw,
+                blog_url: credUrl.trim(),
+                phone: credPhone.trim() || null,
+                is_active: !!credActive,
+            })});
+            setCredLogin(''); setCredPw(''); setCredUrl(''); setCredPhone(''); setCredActive(true);
+            setMsg('블로그 자격정보 추가 완료');
+            reloadBase();
+        };
+        const toggleCred = async (c) => {
+            await api(`/creds/${c.id}`, { method:'PATCH', body: JSON.stringify({ is_active: !c.is_active }) });
+            reloadBase();
+        };
+        const delCred = async (id) => {
+            await api(`/creds/${id}`, { method:'DELETE' });
+            reloadBase();
+        };
+
+        // lookup helpers
+        const blogById = React.useMemo(() => {
+            const o = {}; blogs.forEach(b => o[b.id] = b); return o;
+        }, [blogs]);
+        const keywordById = React.useMemo(() => {
+            const o = {}; keywords.forEach(k => o[k.id] = k); return o;
+        }, [keywords]);
+
+        function findTargetId(kid, bid) {
+            const t = targets.find(t => t.keyword_id === kid && t.blog_id === bid);
+            return t ? t.id : undefined;
+        }
+
+        // mappings
+        const byKeyword = React.useMemo(() => {
+            const map = new Map();
+            targets.forEach(t => {
+                const list = map.get(t.keyword_id) || [];
+                const blog = blogById[t.blog_id];
+                if (blog) list.push({ t, blog });
+                map.set(t.keyword_id, list);
+            });
+            return map;
+        }, [targets, blogById]);
+
+        const byBlog = React.useMemo(() => {
+            const map = new Map();
+            targets.forEach(t => {
+                const list = map.get(t.blog_id) || [];
+                const kw = keywordById[t.keyword_id];
+                if (kw) list.push({ t, kw });
+                map.set(t.blog_id, list);
+            });
+            return map;
+        }, [targets, keywordById]);
+
+        const totalActiveKeywords = keywords.filter(k => k.is_active).length;
+        const totalActiveBlogs = blogs.filter(b => b.is_active).length;
+
+        // --- 결과 필터링/표시용 ---
+        const filteredResults = React.useMemo(() => {
+            const q = resQuery.trim().toLowerCase();
+            return results.filter(r => {
+                if (resFound === 'found' && !r.found) return false;
+                if (resFound === 'notfound' && r.found) return false;
+
+                if (!q) return true;
+                const kwName = (keywordById[r.keyword_id]?.keyword || '').toLowerCase();
+                const blogName = (blogById[r.blog_id]?.name || '').toLowerCase();
+                const sect = (r.section || '').toLowerCase();
+                const title = (r.matched_title || '').toLowerCase();
+                return kwName.includes(q) || blogName.includes(q) || sect.includes(q) || title.includes(q);
+            });
+        }, [results, resFound, resQuery, keywordById, blogById]);
+
+        function exportCSV() {
+            const header = [
+                'run_date','keyword','blog','found','occurrences','section','matched_title','matched_url','created_at'
+            ];
+            const lines = [header.join(',')];
+            filteredResults.forEach(r => {
+                const row = [
+                    r.run_date,
+                    JSON.stringify(keywordById[r.keyword_id]?.keyword || ''),
+                    JSON.stringify(blogById[r.blog_id]?.name || ''),
+                    r.found ? '1':'0',
+                    r.occurrences,
+                    JSON.stringify(r.section || ''),
+                    JSON.stringify(r.matched_title || ''),
+                    JSON.stringify(r.matched_url || ''),
+                    r.created_at || ''
+                ];
+                lines.push(row.join(','));
+            });
+            const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `results_${resDate||'all'}.csv`; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        return (
+            <div>
+                <h1>Naver Monitor – Mini UI <small>(API <code>{API_BASE}</code>)</small></h1>
+                {msg && <div className="card" style={{borderColor:'#10b981', color:'#065f46'}}>{msg}</div>}
+
+                {/* 요약 */}
+                <div className="card">
+                    <strong>요약</strong>
+                    <div className="row">
+                        <span className="chip">키워드: {keywords.length} <span className="muted">(active {totalActiveKeywords})</span></span>
+                        <span className="chip">블로그: {blogs.length} <span className="muted">(active {totalActiveBlogs})</span></span>
+                        <span className="chip">연결: {targets.length}</span>
+                        <span className="chip">자격정보: {creds.length}</span>
+                    </div>
+                </div>
+
+                {/* 수동 실행 */}
+                <div className="card">
+                    <h3>수동 실행</h3>
+                    <div className="row">
+                        <button onClick={runNow}>지금 전체 배치 실행</button>
+                        <small className="muted">실행은 서버에서 백그라운드로 처리됩니다.</small>
+                    </div>
+                </div>
+
+                <div className="grid">
+                    {/* 키워드 */}
+                    <div className="card">
+                        <h3>Keywords</h3>
+                        <div className="row">
+                            <input placeholder="새 키워드" value={kw} onChange={e=>setKw(e.target.value)} />
+                            <button onClick={addKeyword}>추가</button>
+                        </div>
+                        <ul>
+                            {keywords.map(k => (
+                                <li key={k.id}>
+                                    <div>
+                                        <b>{k.keyword}</b> <small>#{k.id}</small> <small>· {k.is_active ? 'active' : 'inactive'}</small>
+                                    </div>
+                                    <div className="row">
+                                        <button className="ghost" onClick={() => toggleKeyword(k)}>{k.is_active ? '비활성' : '활성'}</button>
+                                        <button className="ghost" onClick={() => delKeyword(k.id)}>삭제</button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* 블로그 */}
+                    <div className="card">
+                        <h3>Blogs</h3>
+                        <div className="row">
+                            <input placeholder="블로그 이름" value={blogName} onChange={e=>setBlogName(e.target.value)} />
+                            <input placeholder="url_pattern (https://blog.naver.com/… 또는 …?blogId=…)" style={{flex:1}} value={blogUrl} onChange={e=>setBlogUrl(e.target.value)} />
+                            <button onClick={addBlog}>추가</button>
+                        </div>
+                        <ul>
+                            {blogs.map(b => (
+                                <li key={b.id}>
+                                    <div>
+                                        <b>{b.name}</b> <small>#{b.id}</small><br/>
+                                        <small>{b.url_pattern}</small> <small>· {b.is_active ? 'active' : 'inactive'}</small>
+                                    </div>
+                                    <div className="row">
+                                        <button className="ghost" onClick={() => toggleBlog(b)}>{b.is_active ? '비활성' : '활성'}</button>
+                                        <button className="ghost" onClick={() => delBlog(b.id)}>삭제</button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+
+                {/* 블로그 자격정보 */}
+                <div className="card">
+                    <h3>Blog Credentials</h3>
+                    <div className="row">
+                        <input placeholder="로그인 아이디" value={credLogin} onChange={e => setCredLogin(e.target.value)}/>
+                        <input type="password" placeholder="비밀번호" value={credPw}
+                               onChange={e => setCredPw(e.target.value)}/>
+                        <input placeholder="블로그 URL" style={{flex: 1}} value={credUrl}
+                               onChange={e => setCredUrl(e.target.value)}/>
+                        <input placeholder="휴대폰 번호 (숫자만)" value={credPhone} onChange={e => setCredPhone(e.target.value)}
+                               style={{width: '160px'}}/>
+                        <label className="row" style={{alignItems: 'center', gap: '6px'}}>
+                            <input type="checkbox" checked={credActive}
+                                   onChange={e => setCredActive(e.target.checked)}/>
+                            <span className="muted">active</span>
+                        </label>
+                        <button onClick={addCred}>저장</button>
+                    </div>
+                    <ul>
+                        {creds.map(c => (
+                            <li key={c.id}>
+                                <div>
+                                    <b>{c.login_id}</b> <small>#{c.id}</small><br/>
+                                    <small>{c.blog_url}</small>
+                                    <small>· {c.is_active ? 'active' : 'inactive'}</small><br/>
+                                    <small>📱 {c.phone || '—'}</small>
+                                </div>
+                                <div className="row">
+                                    <button className="ghost" onClick={() => toggleCred(c)}>{c.is_active ? '비활성' : '활성'}</button>
+                                    <button className="ghost" onClick={() => delCred(c.id)}>삭제</button>
+                                </div>
+                            </li>
+                        ))}
+                        {!creds.length && <li className="muted">등록된 자격정보 없음</li>}
+                    </ul>
+                </div>
+                {/* 연결 생성 */}
+                <div className="card">
+                    <h3>연결 추가 (Keyword ↔ Blog)</h3>
+                    <div className="row">
+                        <select value={selKw} onChange={e=>setSelKw(e.target.value)}>
+                            <option value="">키워드 선택</option>
+                            {keywords.map(k => <option key={k.id} value={k.id}>{k.keyword}</option>)}
+                        </select>
+                        <select value={selBlog} onChange={e=>setSelBlog(e.target.value)}>
+                            <option value="">블로그 선택</option>
+                            {blogs.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                        </select>
+                        <button onClick={addTarget}>연결 추가</button>
+                    </div>
+                </div>
+
+                {/* 연결 보기: 키워드 ➜ 블로그 */}
+                <div className="card">
+                    <h3>연결 보기 — 키워드 ➜ 블로그</h3>
+                    {keywords.map(k => (
+                        <div key={k.id} className="card" style={{margin:'8px 0', padding:'12px'}}>
+                            <b>{k.keyword}</b> <small className="muted">#{k.id}</small>
+                            <div className="row">
+                                {(byKeyword.get(k.id) || []).map(({t, blog}) => (
+                                    <span key={t.id} className="chip">
+                      {blog.name}
+                                        <button className="ghost" onClick={() => delTarget(t.id)}>해제</button>
+                    </span>
+                                ))}
+                                {!(byKeyword.get(k.id) || []).length && <small className="muted">연결 없음</small>}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* 연결 보기: 블로그 ➜ 키워드 */}
+                <div className="card">
+                    <h3>연결 보기 — 블로그 ➜ 키워드</h3>
+                    {blogs.map(b => (
+                        <div key={b.id} className="card" style={{margin:'8px 0', padding:'12px'}}>
+                            <b>{b.name}</b> <small className="muted">#{b.id}</small><br/>
+                            <small className="muted">{b.url_pattern}</small>
+                            <div className="row" style={{marginTop:'6px'}}>
+                                {(byBlog.get(b.id) || []).map(({t, kw}) => (
+                                    <span key={t.id} className="chip">
+                      {kw.keyword}
+                                        <button className="ghost" onClick={() => delTarget(t.id)}>해제</button>
+                    </span>
+                                ))}
+                                {!(byBlog.get(b.id) || []).length && <small className="muted">연결 없음</small>}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="card">
+                    <h3>최근 결과</h3>
+                    <div className="row">
+                        <label className="row" style={{alignItems: 'center', gap: '6px'}}>
+                            <span className="muted">날짜</span>
+                            <input type="date" value={resDate} onChange={(e) => setResDate(e.target.value)}/>
+                        </label>
+                        <select value={resFound} onChange={e => setResFound(e.target.value)}>
+                            <option value="all">전체</option>
+                            <option value="found">매칭만</option>
+                            <option value="notfound">미매칭만</option>
+                        </select>
+                        <input placeholder="키워드/블로그/섹션/제목 검색" style={{flex:1}} value={resQuery} onChange={e=>setResQuery(e.target.value)} />
+                        <button className="ghost" onClick={reloadResults}>새로고침</button>
+                        <button onClick={exportCSV}>CSV</button>
+                    </div>
+
+                    <div style={{overflow: 'auto'}}>
+                        <table>
+                            <thead>
+                            <tr>
+                                <th className="nowrap">날짜</th>
+                                <th>키워드</th>
+                                <th>블로그</th>
+                                <th className="nowrap">매칭</th>
+                                <th className="right nowrap">횟수</th>
+                                <th>섹션</th>
+                                <th>제목 / 링크</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {filteredResults.map((r, i) => (
+                                <tr key={i}>
+                                    <td className="nowrap">{r.run_date}</td>
+                                    <td>{keywordById[r.keyword_id]?.keyword || `#${r.keyword_id}`}</td>
+                                    <td>{blogById[r.blog_id]?.name || `#${r.blog_id}`}</td>
+                                    <td className="nowrap">{r.found ? '✅' : '—'}</td>
+                                    <td className="right">{r.occurrences}</td>
+                                    <td>{r.section || ''}</td>
+                                    <td>
+                                        {r.matched_title ? (<span>{r.matched_title} </span>) : null}
+                                        {r.matched_url ? (
+                                            <a href={r.matched_url} target="_blank" rel="noreferrer">열기↗</a>) : null}
+                                    </td>
+                                </tr>
+                            ))}
+                            {!filteredResults.length && (
+                                <tr>
+                                    <td colSpan="7" className="muted">데이터 없음</td>
+                                </tr>
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
+</body>

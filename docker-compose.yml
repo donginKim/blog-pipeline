@@ -1,0 +1,72 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql-conf:/etc/mysql/conf.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+  api:
+    build:
+      context: ./backend                 # ← 컨텍스트는 backend 폴더
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app                  # ← 컨테이너 /app == 로컬 backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      CRON_SCHEDULE: "*/30 * * * *"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app:rw                   # ← 워커도 /app 에 backend 마운트해서 모듈 실행
+
+  writer:
+    build:
+      context: ./writer
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      TZ: "Asia/Seoul"
+      HEADLESS: "${HEADLESS:-1}"
+      NAVER_ID: "${NAVER_ID}"
+      NAVER_PW: "${NAVER_PW}"
+      DOWNLOAD_IMAGES_FIRST: "${DOWNLOAD_IMAGES_FIRST:-1}"
+    shm_size: "1gb"
+    volumes:
+      - ./writer:/app                  # writer 코드
+      - ./backend/generated:/app/generated   # worker가 만든 .txt 공유₩
+      - ./writer/images:/app/images
+      - ./debug:/app/debug
+    ports:
+      - "8080:8080"                    # 내부 호출이면 포트 노출 생략 가능
+    restart: unless-stopped
+
+volumes:
+  db_data:
