@@ -1,0 +1,139 @@
+
+> naver-monitor-frontend@2.0.0 dev
+> vite
+
+
+  VITE v4.5.14  ready in 95 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+오전 1:10:11 [vite] warning: Duplicate member "getKeywords" in class body
+231|  
+232|    // Keywords endpoints
+233|    async getKeywords(params?: { skip?: number; limit?: number; is_active?: boolean }): Promise<Keyword[]> {
+   |          ^
+234|      const response: AxiosResponse<Keyword[]> = await this.api.get('/keywords', { params });
+235|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "createKeyword" in class body
+236|    }
+237|  
+238|    async createKeyword(data: KeywordCreate): Promise<Keyword> {
+   |          ^
+239|      const response: AxiosResponse<Keyword> = await this.api.post('/keywords', data);
+240|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "updateKeyword" in class body
+241|    }
+242|  
+243|    async updateKeyword(id: number, data: KeywordUpdate): Promise<Keyword> {
+   |          ^
+244|      const response: AxiosResponse<Keyword> = await this.api.put(`/keywords/${id}`, data);
+245|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "deleteKeyword" in class body
+246|    }
+247|  
+248|    async deleteKeyword(id: number): Promise<void> {
+   |          ^
+249|      await this.api.delete(`/keywords/${id}`);
+250|    }
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "getCrawlRuns" in class body
+268|    }
+269|  
+270|    async getCrawlRuns(limit?: number): Promise<CrawlRun[]> {
+   |          ^
+271|      const response: AxiosResponse<CrawlRun[]> = await this.api.get('/crawl/runs', {
+272|        params: { limit },
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "getBlogs" in class body
+281|  
+282|    // Blogs endpoints
+283|    async getBlogs(params?: { skip?: number; limit?: number; is_active?: boolean }): Promise<Blog[]> {
+   |          ^
+284|      const response: AxiosResponse<Blog[]> = await this.api.get('/blogs', { params });
+285|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "createBlog" in class body
+286|    }
+287|  
+288|    async createBlog(data: BlogCreate): Promise<Blog> {
+   |          ^
+289|      const response: AxiosResponse<Blog> = await this.api.post('/blogs', data);
+290|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "updateBlog" in class body
+291|    }
+292|  
+293|    async updateBlog(id: number, data: BlogUpdate): Promise<Blog> {
+   |          ^
+294|      const response: AxiosResponse<Blog> = await this.api.put(`/blogs/${id}`, data);
+295|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "deleteBlog" in class body
+296|    }
+297|  
+298|    async deleteBlog(id: number): Promise<void> {
+   |          ^
+299|      await this.api.delete(`/blogs/${id}`);
+300|    }
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "getTargets" in class body
+301|  
+302|    // Targets endpoints
+303|    async getTargets(params?: { skip?: number; limit?: number; keyword_id?: number; blog_id?: number; is_active?: boolean }): Promise<KeywordTarget[]> {
+   |          ^
+304|      const response: AxiosResponse<KeywordTarget[]> = await this.api.get('/targets', { params });
+305|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "createTarget" in class body
+306|    }
+307|  
+308|    async createTarget(data: KeywordTargetCreate): Promise<KeywordTarget> {
+   |          ^
+309|      const response: AxiosResponse<KeywordTarget> = await this.api.post('/targets', data);
+310|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "updateTarget" in class body
+311|    }
+312|  
+313|    async updateTarget(id: number, data: KeywordTargetUpdate): Promise<KeywordTarget> {
+   |          ^
+314|      const response: AxiosResponse<KeywordTarget> = await this.api.put(`/targets/${id}`, data);
+315|      return response.data;
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts
+오전 1:10:11 [vite] warning: Duplicate member "deleteTarget" in class body
+316|    }
+317|  
+318|    async deleteTarget(id: number): Promise<void> {
+   |          ^
+319|      await this.api.delete(`/targets/${id}`);
+320|    }
+
+  Plugin: vite:esbuild
+  File: /Users/amiro/Workshop/naver-monitor/frontend/src/services/api.ts

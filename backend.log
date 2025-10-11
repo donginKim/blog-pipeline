@@ -1,0 +1,74 @@
+/Users/amiro/Workshop/naver-monitor/server-debug.py:2371: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+/Users/amiro/Workshop/naver-monitor/server-debug.py:2383: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")
+INFO:     Started server process [74397]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+🔍 데이터베이스 경로: sqlite:////Users/amiro/Workshop/naver-monitor/naver_monitor.db
+🚀 Naver Monitor API 서버 시작 중...
+📋 접속 URL:
+   - API: http://localhost:8001
+   - API Docs: http://localhost:8001/docs
+   - Frontend: http://localhost:3000
+
+🔧 테스트 계정:
+   - 사용자명: testuser
+   - 비밀번호: testpassword123
+
+🔐 로그인 엔드포인트: POST /api/auth/login
+👤 사용자 정보: GET /api/auth/me
+
+🚀 스케줄러 시작...
+✅ 스케줄러 등록: 매일 02:00, 요일: 0,1,2,3,4,5,6
+✅ 저장된 스케줄 로드 완료
+INFO:     127.0.0.1:65064 - "GET / HTTP/1.1" 200 OK
+🔍 로그인 시도: testuser
+🔍 사용자 조회 결과: (1, 'testuser', 'test@example.com', 'testpassword123', 1)
+🔍 저장된 비밀번호 해시: testpassword123
+🔍 비밀번호 검증: tes... vs tes...
+🔍 검증 결과: True
+✅ 로그인 성공: testuser
+INFO:     127.0.0.1:65066 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65079 - "OPTIONS /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65080 - "OPTIONS /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65079 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65079 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65079 - "OPTIONS /api/settings/notifications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65080 - "OPTIONS /api/settings/notifications HTTP/1.1" 200 OK
+🔍 get_notification_settings 호출됨
+INFO:     127.0.0.1:65082 - "GET /api/settings/notifications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65080 - "OPTIONS /api/settings/schedule HTTP/1.1" 200 OK
+🔍 get_notification_settings 호출됨
+INFO:     127.0.0.1:65082 - "GET /api/settings/notifications HTTP/1.1" 200 OK
+🔍 get_schedule_settings 호출됨
+INFO:     127.0.0.1:65079 - "GET /api/settings/schedule HTTP/1.1" 200 OK
+🔍 get_schedule_settings 호출됨
+INFO:     127.0.0.1:65079 - "GET /api/settings/schedule HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65079 - "OPTIONS /api/settings/ai-blog HTTP/1.1" 200 OK
+🔍 get_ai_blog_settings 호출됨
+INFO:     127.0.0.1:65082 - "GET /api/settings/ai-blog HTTP/1.1" 200 OK
+🔍 get_ai_blog_settings 호출됨
+INFO:     127.0.0.1:65082 - "GET /api/settings/ai-blog HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65089 - "OPTIONS /api/dashboard/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65090 - "OPTIONS /api/dashboard/recent-activity?limit=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65089 - "GET /api/dashboard/stats HTTP/1.1" 200 OK
+🔍 get_recent_activity 호출됨 (limit=10)
+✅ 최근 활동 조회 성공: 4개
+INFO:     127.0.0.1:65090 - "GET /api/dashboard/recent-activity?limit=10 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [74397]
+🛑 스케줄러 종료...

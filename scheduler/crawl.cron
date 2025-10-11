@@ -1,0 +1,3 @@
+# Default time (overridden at container start via $CRON_MINUTE/$CRON_HOUR)
+#30 8 * * * cd /app && /usr/local/bin/python -m batch.run_crawl >> /var/log/cron.log 2>&1
+*/5 * * * * cd /app && /usr/local/bin/python -m batch.run_crawl >> /var/log/cron.log 2>&1

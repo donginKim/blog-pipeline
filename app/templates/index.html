@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<section>
+  <h2>1) 키워드 & 블로그 등록</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;">
+    <article>
+      <h3>키워드 추가</h3>
+      <form method="post" action="/keywords">
+        <label>키워드 <input name="keyword" required></label>
+        <button>추가</button>
+      </form>
+      <details open>
+        <summary>등록된 키워드</summary>
+        <ul>
+          {% for k in keywords %}<li>#{{k.id}} — {{k.keyword}} {% if not k.is_active %}(비활성){% endif %}</li>{% endfor %}
+        </ul>
+      </details>
+    </article>
+    <article>
+      <h3>블로그 추가</h3>
+      <form method="post" action="/blogs">
+        <label>이름 <input name="name" placeholder="내블로그" required></label>
+        <label>URL 패턴 <input name="url_pattern" placeholder="https://blog.naver.com/myid" required></label>
+        <button>추가</button>
+      </form>
+      <details open>
+        <summary>등록된 블로그</summary>
+        <ul>
+          {% for b in blogs %}<li>#{{b.id}} — {{b.name}} ({{b.url_pattern}})</li>{% endfor %}
+        </ul>
+      </details>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>2) 키워드 ↔ 블로그 연결</h2>
+  <form method="post" action="/targets">
+    <label>키워드
+      <select name="keyword_id" required>
+        {% for k in keywords %}<option value="{{k.id}}">#{{k.id}} — {{k.keyword}}</option>{% endfor %}
+      </select>
+    </label>
+    <label>블로그
+      <select name="blog_id" required>
+        {% for b in blogs %}<option value="{{b.id}}">#{{b.id}} — {{b.name}}</option>{% endfor %}
+      </select>
+    </label>
+    <button>연결</button>
+  </form>
+
+  <details open>
+    <summary>현재 매핑</summary>
+    <ul>
+      {% for (kw, blist) in mappings %}
+      <li><strong>{{kw.keyword}}</strong> →
+        {% if blist|length == 0 %}<em>(연결 없음)</em>
+        {% else %}{{ blist|map(attribute='name')|list|join(', ') }}{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+</section>
+
+<section>
+  <h2>3) 최근 결과 (최신 100건)</h2>
+  <table>
+    <thead>
+    <tr><th>ID</th><th>날짜</th><th>키워드</th><th>블로그</th><th>발견</th><th>횟수</th><th>섹션</th><th>URL</th></tr>
+    </thead>
+    <tbody>
+    {% for r in results %}
+    <tr>
+      <td>{{r.id}}</td>
+      <td>{{r.run_date}}</td>
+      <td>{{r.keyword_id}}</td>
+      <td>{{r.blog_id}}</td>
+      <td>{% if r.found %}✅{% else %}❌{% endif %}</td>
+      <td>{{r.occurrences}}</td>
+      <td>{{r.section or ''}}</td>
+      <td>{% if r.matched_url %}<a href="{{r.matched_url}}" target="_blank">link</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

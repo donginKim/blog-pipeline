@@ -1,0 +1,47 @@
+# 프로덕션용 백엔드 Dockerfile
+FROM python:3.9-slim
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 시스템 패키지 설치
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 의존성 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Playwright 브라우저 설치
+RUN playwright install chromium
+RUN playwright install-deps chromium
+
+# 애플리케이션 코드 복사
+COPY server-debug.py .
+COPY backend ./backend
+
+# 로그 디렉토리 생성
+RUN mkdir -p /app/logs
+
+# 헬스체크 스크립트 생성
+RUN echo '#!/bin/sh\ncurl -f http://localhost:8000/health || exit 1' > /app/healthcheck.sh && \
+    chmod +x /app/healthcheck.sh
+
+# 비-root 사용자 생성
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# 포트 노출
+EXPOSE 8000
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD /app/healthcheck.sh
+
+# 애플리케이션 실행
+CMD ["uvicorn", "server-debug:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+
