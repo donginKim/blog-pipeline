@@ -23,7 +23,6 @@ import uvicorn
 import jwt
 from datetime import datetime, timedelta
 import hashlib
-import bcrypt
 import pandas as pd
 import io
 import asyncio
