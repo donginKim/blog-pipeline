@@ -63,7 +63,7 @@ else
 fi
 
 # 프론트엔드 확인
-if [ -d "frontend" ]; then
+if [ -d "frontend" ] && command -v npm &> /dev/null; then
     echo -e "${YELLOW}🎨 프론트엔드 확인...${NC}"
     
     if [ ! -d "frontend/node_modules" ]; then
@@ -87,6 +87,13 @@ if [ -d "frontend" ]; then
     else
         echo -e "${YELLOW}⚠️  프론트엔드 시작 실패 (백엔드만 실행 중)${NC}"
     fi
+else
+    echo -e "${YELLOW}⚠️  Node.js가 설치되지 않았습니다. 백엔드만 실행합니다.${NC}"
+    echo -e "${BLUE}💡 프론트엔드 사용을 원하시면 Node.js를 설치하세요:${NC}"
+    echo "   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -"
+    echo "   sudo apt-get install -y nodejs"
+    echo ""
+    FRONTEND_PID=""
 fi
 
 echo ""
