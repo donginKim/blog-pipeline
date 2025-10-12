@@ -25,8 +25,11 @@ class ApiService {
   private api: AxiosInstance;
 
   constructor() {
+    // 환경 변수에서 API URL 가져오기 (없으면 localhost)
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+    
     this.api = axios.create({
-      baseURL: 'http://localhost:8001/api',
+      baseURL: `${apiUrl}/api`,
       headers: {
         'Content-Type': 'application/json',
       },
