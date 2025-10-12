@@ -69,11 +69,11 @@ pkill -f "serve" 2>/dev/null || true
 lsof -ti:3000 | xargs kill -9 2>/dev/null || true
 sleep 2
 
-# 프로덕션 빌드 서빙
-cd frontend
-nohup npx serve -s dist -p 3000 --host 0.0.0.0 > ../logs/frontend.log 2>&1 &
+# 프로덕션 빌드 서빙 (Python HTTP Server 사용)
+cd frontend/dist
+nohup python3 -m http.server 3000 > ../../logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
-cd ..
+cd ../..
 
 sleep 2
 
