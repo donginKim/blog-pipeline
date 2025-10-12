@@ -1,0 +1,49 @@
+# 간단한 프로덕션 Dockerfile (PostgreSQL 제외)
+FROM python:3.9-slim
+
+# 환경 변수
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /app
+
+# 최소 시스템 패키지
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 패키지 설치
+COPY requirements.txt .
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Playwright 브라우저 (chromium만)
+RUN playwright install --with-deps chromium
+
+# 앱 코드 복사
+COPY server-debug.py .
+COPY init-db.py .
+COPY naver_monitor.db .
+
+# 로그 디렉토리
+RUN mkdir -p /app/logs /app/blog_posts
+
+# 비-root 사용자
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 8000
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
+
+# 시작 명령
+CMD ["uvicorn", "server-debug:app", "--host", "0.0.0.0", "--port", "8000"]
+

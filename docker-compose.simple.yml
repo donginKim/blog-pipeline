@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # 백엔드 (SQLite 사용, 간단한 버전)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: naver-monitor-backend-simple
+    restart: unless-stopped
+    environment:
+      # 환경 변수
+      DATABASE_URL: sqlite:////app/naver_monitor.db
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      
+      # 알리고 SMS API
+      ALIGO_API_KEY: ${ALIGO_API_KEY:-}
+      ALIGO_USER_ID: ${ALIGO_USER_ID:-}
+      ALIGO_SENDER: ${ALIGO_SENDER:-}
+      
+      # OpenAI API
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      
+      # 기타 설정
+      ENV: production
+      DEBUG: ${DEBUG:-false}
+    volumes:
+      - ./naver_monitor.db:/app/naver_monitor.db
+      - ./logs:/app/logs
+      - ./blog_posts:/app/blog_posts
+    ports:
+      - "${BACKEND_PORT:-8001}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 프론트엔드
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+    container_name: naver-monitor-frontend-simple
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+
+networks:
+  default:
+    name: naver-monitor-simple
+
