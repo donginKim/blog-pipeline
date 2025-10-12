@@ -104,9 +104,13 @@ export interface KeywordTargetUpdate {
 // Crawl Run types
 export interface CrawlRun {
   id: number;
+  keyword?: string;
+  blog_name?: string;
   started_at: string;
   finished_at?: string;
-  status: 'running' | 'completed' | 'failed';
+  completed_at?: string;
+  created_at?: string;
+  status: 'running' | 'completed' | 'failed' | 'success' | 'error';
   total_keywords: number;
   success_count: number;
   fail_count: number;
@@ -142,6 +146,7 @@ export interface DashboardStats {
   total_keywords: number;
   total_blogs: number;
   total_targets: number;
+  active_targets?: number;
   total_results: number;
   recent_runs: CrawlRun[];
   recent_results: CrawlResult[];
@@ -150,7 +155,10 @@ export interface DashboardStats {
 export interface RecentActivity {
   type: string;
   id: number;
+  keyword?: string;
+  blog_name?: string;
   timestamp: string;
+  created_at?: string;
   status?: string;
   total_keywords?: number;
   success_count?: number;
@@ -205,4 +213,23 @@ export interface FormErrors {
 export interface ApiError {
   detail: string;
   status_code: number;
+  message?: string;
+}
+
+// Generated Post types
+export interface GeneratedPost {
+  id: number;
+  keyword_id: number;
+  keyword?: string;
+  target_id?: number;
+  title: string;
+  content: string;
+  summary: string;
+  tags: string[];
+  status: 'draft' | 'ready' | 'published';
+  naver_post_id?: string;
+  published_url?: string;
+  created_at: string;
+  updated_at: string;
+  published_at?: string;
 }

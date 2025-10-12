@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
-import { Settings, Bell, MessageSquare, Save, TestTube, Clock, Bot } from 'lucide-react';
+import { Bell, MessageSquare, Save, TestTube, Clock, Bot } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface NotificationSettings {
@@ -303,7 +302,7 @@ export const SettingsPage: React.FC = () => {
                   name="notification_type"
                   value="sms"
                   checked={settings.notification_type === 'sms'}
-                  onChange={(e) => setSettings(prev => ({ ...prev, notification_type: 'sms' }))}
+                  onChange={() => setSettings(prev => ({ ...prev, notification_type: 'sms' }))}
                   disabled={!settings.enabled}
                   className="text-blue-600"
                 />

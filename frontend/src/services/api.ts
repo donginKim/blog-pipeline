@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import {
+import type {
   User,
   UserCreate,
   UserUpdate,
@@ -14,11 +14,11 @@ import {
   KeywordTargetUpdate,
   CrawlResult,
   CrawlRun,
-  ResultFilter,
   DashboardStats,
   RecentActivity,
   LoginRequest,
   LoginResponse,
+  GeneratedPost,
 } from '@/types';
 
 class ApiService {
@@ -26,7 +26,7 @@ class ApiService {
 
   constructor() {
     // 환경 변수에서 API URL 가져오기 (없으면 localhost)
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8001';
     
     this.api = axios.create({
       baseURL: `${apiUrl}/api`,
@@ -59,10 +59,7 @@ class ApiService {
 
   // Auth endpoints
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response: AxiosResponse<LoginResponse> = await this.api.post('/auth/login', {
-      username: credentials.username,
-      password: credentials.password,
-    });
+    const response: AxiosResponse<LoginResponse> = await this.api.post('/auth/login', credentials);
     return response.data;
   }
 
@@ -82,157 +79,6 @@ class ApiService {
   }
 
   // Keyword endpoints
-  async getKeywords(params?: { skip?: number; limit?: number; is_active?: boolean }): Promise<Keyword[]> {
-    const response: AxiosResponse<Keyword[]> = await this.api.get('/keywords/', { params });
-    return response.data;
-  }
-
-  async createKeyword(keywordData: KeywordCreate): Promise<Keyword> {
-    const response: AxiosResponse<Keyword> = await this.api.post('/keywords/', keywordData);
-    return response.data;
-  }
-
-  async getKeyword(id: number): Promise<Keyword> {
-    const response: AxiosResponse<Keyword> = await this.api.get(`/keywords/${id}`);
-    return response.data;
-  }
-
-  async updateKeyword(id: number, keywordData: KeywordUpdate): Promise<Keyword> {
-    const response: AxiosResponse<Keyword> = await this.api.put(`/keywords/${id}`, keywordData);
-    return response.data;
-  }
-
-  async deleteKeyword(id: number): Promise<void> {
-    await this.api.delete(`/keywords/${id}`);
-  }
-
-  // Blog endpoints
-  async getBlogs(params?: { skip?: number; limit?: number; is_active?: boolean }): Promise<Blog[]> {
-    const response: AxiosResponse<Blog[]> = await this.api.get('/blogs/', { params });
-    return response.data;
-  }
-
-  async createBlog(blogData: BlogCreate): Promise<Blog> {
-    const response: AxiosResponse<Blog> = await this.api.post('/blogs/', blogData);
-    return response.data;
-  }
-
-  async getBlog(id: number): Promise<Blog> {
-    const response: AxiosResponse<Blog> = await this.api.get(`/blogs/${id}`);
-    return response.data;
-  }
-
-  async updateBlog(id: number, blogData: BlogUpdate): Promise<Blog> {
-    const response: AxiosResponse<Blog> = await this.api.put(`/blogs/${id}`, blogData);
-    return response.data;
-  }
-
-  async deleteBlog(id: number): Promise<void> {
-    await this.api.delete(`/blogs/${id}`);
-  }
-
-  // Target endpoints
-  async getTargets(params?: {
-    skip?: number;
-    limit?: number;
-    keyword_id?: number;
-    blog_id?: number;
-    is_active?: boolean;
-  }): Promise<KeywordTarget[]> {
-    const response: AxiosResponse<KeywordTarget[]> = await this.api.get('/targets/', { params });
-    return response.data;
-  }
-
-  async createTarget(targetData: KeywordTargetCreate): Promise<KeywordTarget> {
-    const response: AxiosResponse<KeywordTarget> = await this.api.post('/targets/', targetData);
-    return response.data;
-  }
-
-  async getTarget(id: number): Promise<KeywordTarget> {
-    const response: AxiosResponse<KeywordTarget> = await this.api.get(`/targets/${id}`);
-    return response.data;
-  }
-
-  async updateTarget(id: number, targetData: KeywordTargetUpdate): Promise<KeywordTarget> {
-    const response: AxiosResponse<KeywordTarget> = await this.api.put(`/targets/${id}`, targetData);
-    return response.data;
-  }
-
-  async deleteTarget(id: number): Promise<void> {
-    await this.api.delete(`/targets/${id}`);
-  }
-
-  async triggerCrawlForTarget(id: number): Promise<{ message: string; run_id?: number }> {
-    const response: AxiosResponse<{ message: string; run_id?: number }> = await this.api.post('/crawl/trigger', {
-      target_id: id
-    });
-    return response.data;
-  }
-
-  // Result endpoints
-  async getResults(params?: {
-    keyword_id?: number;
-    blog_id?: number;
-    found?: boolean;
-    run_date_from?: string;
-    run_date_to?: string;
-    skip?: number;
-    limit?: number;
-  }): Promise<CrawlResult[]> {
-    const response: AxiosResponse<CrawlResult[]> = await this.api.get('/results/', { params });
-    return response.data;
-  }
-
-  async getResultStats(params?: {
-    keyword_id?: number;
-    blog_id?: number;
-    run_date_from?: string;
-    run_date_to?: string;
-  }): Promise<{
-    total_count: number;
-    found_count: number;
-    not_found_count: number;
-    found_percentage: number;
-    average_occurrences: number;
-  }> {
-    const response = await this.api.get('/results/stats', { params });
-    return response.data;
-  }
-
-  async getCrawlRuns(params?: { skip?: number; limit?: number }): Promise<CrawlRun[]> {
-    const response: AxiosResponse<CrawlRun[]> = await this.api.get('/results/runs', { params });
-    return response.data;
-  }
-
-  async getCrawlRun(id: number): Promise<CrawlRun> {
-    const response: AxiosResponse<CrawlRun> = await this.api.get(`/results/runs/${id}`);
-    return response.data;
-  }
-
-  async getRunResults(runId: number, params?: { skip?: number; limit?: number }): Promise<CrawlResult[]> {
-    const response: AxiosResponse<CrawlResult[]> = await this.api.get(`/results/runs/${runId}/results`, { params });
-    return response.data;
-  }
-
-  async triggerFullCrawl(): Promise<{ message: string; task_id: string }> {
-    const response = await this.api.post('/results/trigger-crawl');
-    return response.data;
-  }
-
-  // Dashboard endpoints
-  async getDashboardStats(): Promise<DashboardStats> {
-    const response: AxiosResponse<DashboardStats> = await this.api.get('/dashboard/stats');
-    return response.data;
-  }
-
-  async getRecentActivity(limit?: number): Promise<RecentActivity[]> {
-    const response: AxiosResponse<RecentActivity[]> = await this.api.get('/dashboard/recent-activity', {
-      params: { limit },
-    });
-    return response.data;
-  }
-
-  // Keywords endpoints
   async getKeywords(params?: { skip?: number; limit?: number; is_active?: boolean }): Promise<Keyword[]> {
     const response: AxiosResponse<Keyword[]> = await this.api.get('/keywords', { params });
     return response.data;
@@ -256,7 +102,7 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     
-    const response: AxiosResponse<{ message: string; success_count: number; error_count: number; errors: string[] }> = await this.api.post('/keywords/upload-excel', formData, {
+    const response = await this.api.post('/keywords/upload-excel', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -264,25 +110,7 @@ class ApiService {
     return response.data;
   }
 
-  // Crawling endpoints
-  async triggerCrawl(data: { keyword_id?: number; blog_id?: number; target_id?: number }): Promise<{ message: string; run_id?: number; run_ids?: number[] }> {
-    const response: AxiosResponse<{ message: string; run_id?: number; run_ids?: number[] }> = await this.api.post('/crawl/trigger', data);
-    return response.data;
-  }
-
-  async getCrawlRuns(limit?: number): Promise<CrawlRun[]> {
-    const response: AxiosResponse<CrawlRun[]> = await this.api.get('/crawl/runs', {
-      params: { limit },
-    });
-    return response.data;
-  }
-
-  async getCrawlResults(params?: { keyword_id?: number; blog_id?: number; limit?: number }): Promise<CrawlResult[]> {
-    const response: AxiosResponse<CrawlResult[]> = await this.api.get('/crawl/results', { params });
-    return response.data;
-  }
-
-  // Blogs endpoints
+  // Blog endpoints
   async getBlogs(params?: { skip?: number; limit?: number; is_active?: boolean }): Promise<Blog[]> {
     const response: AxiosResponse<Blog[]> = await this.api.get('/blogs', { params });
     return response.data;
@@ -302,7 +130,7 @@ class ApiService {
     await this.api.delete(`/blogs/${id}`);
   }
 
-  // Targets endpoints
+  // Target endpoints
   async getTargets(params?: { skip?: number; limit?: number; keyword_id?: number; blog_id?: number; is_active?: boolean }): Promise<KeywordTarget[]> {
     const response: AxiosResponse<KeywordTarget[]> = await this.api.get('/targets', { params });
     return response.data;
@@ -320,6 +148,98 @@ class ApiService {
 
   async deleteTarget(id: number): Promise<void> {
     await this.api.delete(`/targets/${id}`);
+  }
+
+  // Crawling endpoints
+  async triggerCrawl(data?: { keyword_id?: number; blog_id?: number; target_id?: number }): Promise<{ message: string; run_id?: number; run_ids?: number[] }> {
+    const response = await this.api.post('/crawl/trigger', data || {});
+    return response.data;
+  }
+
+  async getCrawlRuns(limit?: number): Promise<CrawlRun[]> {
+    const response: AxiosResponse<CrawlRun[]> = await this.api.get('/crawl/runs', {
+      params: { limit },
+    });
+    return response.data;
+  }
+
+  async getCrawlResults(params?: { keyword_id?: number; blog_id?: number; limit?: number }): Promise<CrawlResult[]> {
+    const response: AxiosResponse<CrawlResult[]> = await this.api.get('/crawl/results', { params });
+    return response.data;
+  }
+
+  // Dashboard endpoints
+  async getDashboardStats(): Promise<DashboardStats> {
+    const response: AxiosResponse<DashboardStats> = await this.api.get('/dashboard/stats');
+    return response.data;
+  }
+
+  async getRecentActivity(limit?: number): Promise<RecentActivity[]> {
+    const response: AxiosResponse<RecentActivity[]> = await this.api.get('/dashboard/recent-activity', {
+      params: { limit },
+    });
+    return response.data;
+  }
+
+  // Settings endpoints
+  async getNotificationSettings(): Promise<any> {
+    const response = await this.api.get('/settings/notifications');
+    return response.data;
+  }
+
+  async saveNotificationSettings(data: any): Promise<any> {
+    const response = await this.api.post('/settings/notifications', data);
+    return response.data;
+  }
+
+  async testNotification(): Promise<any> {
+    const response = await this.api.post('/settings/notifications/test');
+    return response.data;
+  }
+
+  async getScheduleSettings(): Promise<any> {
+    const response = await this.api.get('/settings/schedule');
+    return response.data;
+  }
+
+  async saveScheduleSettings(data: any): Promise<any> {
+    const response = await this.api.post('/settings/schedule', data);
+    return response.data;
+  }
+
+  async getAIBlogSettings(): Promise<any> {
+    const response = await this.api.get('/settings/ai-blog');
+    return response.data;
+  }
+
+  async saveAIBlogSettings(data: any): Promise<any> {
+    const response = await this.api.post('/settings/ai-blog', data);
+    return response.data;
+  }
+
+  // Generated Posts endpoints
+  async getGeneratedPosts(params?: { skip?: number; limit?: number; status?: string }): Promise<GeneratedPost[]> {
+    const response: AxiosResponse<GeneratedPost[]> = await this.api.get('/generated-posts', { params });
+    return response.data;
+  }
+
+  async getGeneratedPost(id: number): Promise<GeneratedPost> {
+    const response: AxiosResponse<GeneratedPost> = await this.api.get(`/generated-posts/${id}`);
+    return response.data;
+  }
+
+  async preparePublishPost(id: number): Promise<{ message: string; dsl_file: string; html_file: string }> {
+    const response = await this.api.post(`/generated-posts/${id}/prepare-publish`);
+    return response.data;
+  }
+
+  async markPostPublished(id: number, data: { naver_post_id?: string; published_url?: string }): Promise<GeneratedPost> {
+    const response: AxiosResponse<GeneratedPost> = await this.api.post(`/generated-posts/${id}/mark-published`, data);
+    return response.data;
+  }
+
+  async deleteGeneratedPost(id: number): Promise<void> {
+    await this.api.delete(`/generated-posts/${id}`);
   }
 }
 

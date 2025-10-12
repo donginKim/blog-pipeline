@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useCrawlRuns, useTriggerCrawl } from '@/hooks/useApi';
-import { formatDate, formatRelativeTime, getStatusColor, getStatusText } from '@/utils';
+import { formatRelativeTime, getStatusText } from '@/utils';
 import { 
   Play, 
   Clock,
@@ -11,8 +11,7 @@ import {
   XCircle,
   AlertCircle,
   RefreshCw,
-  Eye,
-  Trash2
+  Eye
 } from 'lucide-react';
 
 export const CrawlRunsPage: React.FC = () => {
@@ -100,7 +99,7 @@ export const CrawlRunsPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">성공</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {crawlRuns?.filter(run => run.status === 'success').length || 0}
+                  {crawlRuns?.filter(run => run.status === 'completed' || run.status === 'success').length || 0}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-400" />
@@ -113,7 +112,7 @@ export const CrawlRunsPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">실패</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {crawlRuns?.filter(run => run.status === 'error').length || 0}
+                  {crawlRuns?.filter(run => run.status === 'failed' || run.status === 'error').length || 0}
                 </p>
               </div>
               <XCircle className="h-8 w-8 text-red-400" />
@@ -169,16 +168,18 @@ export const CrawlRunsPage: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-medium text-gray-900">{run.keyword}</h3>
+                        <h3 className="font-medium text-gray-900">{run.keyword || 'N/A'}</h3>
                         <span className="text-gray-400">-</span>
-                        <span className="text-gray-600">{run.blog_name}</span>
+                        <span className="text-gray-600">{run.blog_name || 'N/A'}</span>
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
                         <span>시작: {run.started_at ? formatRelativeTime(run.started_at) : 'N/A'}</span>
                         {run.completed_at && (
                           <span>완료: {formatRelativeTime(run.completed_at)}</span>
                         )}
-                        <span>생성: {formatRelativeTime(run.created_at)}</span>
+                        {run.created_at && (
+                          <span>생성: {formatRelativeTime(run.created_at)}</span>
+                        )}
                       </div>
                       {run.error_message && (
                         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">

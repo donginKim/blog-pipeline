@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { FileText, Eye, Trash2, Upload, Check, Copy, ExternalLink } from 'lucide-react';
+import { FileText, Eye, Trash2, Upload, Check, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface GeneratedPost {
@@ -76,7 +76,7 @@ export const GeneratedPostsPage: React.FC = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         toast.success('발행 준비 완료! DSL 콘텐츠를 확인하세요.');
         
         // 상세 정보 모달 표시

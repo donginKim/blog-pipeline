@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useDashboardStats, useRecentActivity, useTriggerCrawl } from '@/hooks/useApi';
-import { formatDate, formatRelativeTime, getStatusColor, getStatusText } from '@/utils';
+import { formatRelativeTime, getStatusColor, getStatusText } from '@/utils';
 import { 
   Search, 
   Globe, 
@@ -42,7 +42,7 @@ export const DashboardPage: React.FC = () => {
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">❌</div>
           <p className="text-red-600 mb-2">데이터를 불러올 수 없습니다</p>
-          <p className="text-gray-600">{statsError.message}</p>
+          <p className="text-gray-600">{(statsError as any)?.message || 'An error occurred'}</p>
         </div>
       </div>
     );
@@ -72,7 +72,7 @@ export const DashboardPage: React.FC = () => {
     },
     {
       title: '활성 타겟',
-      value: stats?.active_targets || 0,
+      value: stats?.total_targets || 0,
       icon: BarChart3,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
@@ -175,13 +175,13 @@ export const DashboardPage: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <Badge 
-                      variant={getStatusColor(activity.status)}
+                      variant={getStatusColor(activity.status || '') as any}
                       className="mb-1"
                     >
-                      {getStatusText(activity.status)}
+                      {getStatusText(activity.status || '')}
                     </Badge>
                     <p className="text-sm text-gray-500">
-                      {formatRelativeTime(activity.created_at)}
+                      {formatRelativeTime(activity.created_at || activity.timestamp)}
                     </p>
                   </div>
                 </div>

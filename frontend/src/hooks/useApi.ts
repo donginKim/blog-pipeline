@@ -1,19 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { apiService } from '@/services/api';
-import {
-  Keyword,
+import type {
   KeywordCreate,
   KeywordUpdate,
-  Blog,
   BlogCreate,
   BlogUpdate,
-  KeywordTarget,
   KeywordTargetCreate,
   KeywordTargetUpdate,
-  CrawlResult,
-  CrawlRun,
-  DashboardStats,
-  RecentActivity,
 } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -22,11 +15,12 @@ export const useKeywords = (params?: { skip?: number; limit?: number; is_active?
   return useQuery(['keywords', params], () => apiService.getKeywords(params));
 };
 
-export const useKeyword = (id: number) => {
-  return useQuery(['keyword', id], () => apiService.getKeyword(id), {
-    enabled: !!id,
-  });
-};
+// Removed - not used
+// export const useKeyword = (id: number) => {
+//   return useQuery(['keyword', id], () => apiService.getKeyword(id), {
+//     enabled: !!id,
+//   });
+// };
 
 export const useCreateKeyword = () => {
   const queryClient = useQueryClient();
@@ -104,11 +98,12 @@ export const useBlogs = (params?: { skip?: number; limit?: number; is_active?: b
   return useQuery(['blogs', params], () => apiService.getBlogs(params));
 };
 
-export const useBlog = (id: number) => {
-  return useQuery(['blog', id], () => apiService.getBlog(id), {
-    enabled: !!id,
-  });
-};
+// Removed - not used
+// export const useBlog = (id: number) => {
+//   return useQuery(['blog', id], () => apiService.getBlog(id), {
+//     enabled: !!id,
+//   });
+// };
 
 export const useCreateBlog = () => {
   const queryClient = useQueryClient();
@@ -170,11 +165,12 @@ export const useTargets = (params?: {
   return useQuery(['targets', params], () => apiService.getTargets(params));
 };
 
-export const useTarget = (id: number) => {
-  return useQuery(['target', id], () => apiService.getTarget(id), {
-    enabled: !!id,
-  });
-};
+// Removed - not used
+// export const useTarget = (id: number) => {
+//   return useQuery(['target', id], () => apiService.getTarget(id), {
+//     enabled: !!id,
+//   });
+// };
 
 export const useCreateTarget = () => {
   const queryClient = useQueryClient();
@@ -228,8 +224,8 @@ export const useDeleteTarget = () => {
 export const useTriggerCrawlForTarget = () => {
   const queryClient = useQueryClient();
   
-  return useMutation((id: number) => apiService.triggerCrawlForTarget(id), {
-    onSuccess: (data) => {
+  return useMutation((id: number) => apiService.triggerCrawl({ target_id: id }), {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries(['crawlRuns']);
       queryClient.invalidateQueries(['recentActivity']);
       queryClient.invalidateQueries(['crawlResults']);
@@ -242,27 +238,27 @@ export const useTriggerCrawlForTarget = () => {
   });
 };
 
-// Results hooks
-export const useResults = (params?: {
-  keyword_id?: number;
-  blog_id?: number;
-  found?: boolean;
-  run_date_from?: string;
-  run_date_to?: string;
-  skip?: number;
-  limit?: number;
-}) => {
-  return useQuery(['results', params], () => apiService.getResults(params));
-};
+// Results hooks - Removed, use useCrawlResults instead
+// export const useResults = (params?: {
+//   keyword_id?: number;
+//   blog_id?: number;
+//   found?: boolean;
+//   run_date_from?: string;
+//   run_date_to?: string;
+//   skip?: number;
+//   limit?: number;
+// }) => {
+//   return useQuery(['results', params], () => apiService.getResults(params));
+// };
 
-export const useResultStats = (params?: {
-  keyword_id?: number;
-  blog_id?: number;
-  run_date_from?: string;
-  run_date_to?: string;
-}) => {
-  return useQuery(['resultStats', params], () => apiService.getResultStats(params));
-};
+// export const useResultStats = (params?: {
+//   keyword_id?: number;
+//   blog_id?: number;
+//   run_date_from?: string;
+//   run_date_to?: string;
+// }) => {
+//   return useQuery(['resultStats', params], () => apiService.getResultStats(params));
+// };
 
 export const useCrawlRuns = (limit?: number) => {
   return useQuery(['crawlRuns', limit], () => apiService.getCrawlRuns(limit), {
@@ -270,33 +266,33 @@ export const useCrawlRuns = (limit?: number) => {
   });
 };
 
-export const useCrawlRun = (id: number) => {
-  return useQuery(['crawlRun', id], () => apiService.getCrawlRun(id), {
-    enabled: !!id,
-  });
-};
+// export const useCrawlRun = (id: number) => {
+//   return useQuery(['crawlRun', id], () => apiService.getCrawlRun(id), {
+//     enabled: !!id,
+//   });
+// };
 
-export const useRunResults = (runId: number, params?: { skip?: number; limit?: number }) => {
-  return useQuery(['runResults', runId, params], () => apiService.getRunResults(runId, params), {
-    enabled: !!runId,
-  });
-};
+// export const useRunResults = (runId: number, params?: { skip?: number; limit?: number }) => {
+//   return useQuery(['runResults', runId, params], () => apiService.getRunResults(runId, params), {
+//     enabled: !!runId,
+//   });
+// };
 
-export const useTriggerFullCrawl = () => {
-  const queryClient = useQueryClient();
+// export const useTriggerFullCrawl = () => {
+//   const queryClient = useQueryClient();
   
-  return useMutation(() => apiService.triggerFullCrawl(), {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['crawlRuns']);
-      queryClient.invalidateQueries(['results']);
-      toast.success('전체 크롤링 작업이 시작되었습니다.');
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.detail || '크롤링 시작에 실패했습니다.';
-      toast.error(message);
-    },
-  });
-};
+//   return useMutation(() => apiService.triggerFullCrawl(), {
+//     onSuccess: () => {
+//       queryClient.invalidateQueries(['crawlRuns']);
+//       queryClient.invalidateQueries(['results']);
+//       toast.success('전체 크롤링 작업이 시작되었습니다.');
+//     },
+//     onError: (error: any) => {
+//       const message = error.response?.data?.detail || '크롤링 시작에 실패했습니다.';
+//       toast.error(message);
+//     },
+//   });
+// };
 
 // Dashboard hooks
 export const useDashboardStats = () => {

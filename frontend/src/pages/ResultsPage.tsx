@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useCrawlResults, useCrawlRuns, useKeywords, useBlogs, useTargets } from '@/hooks/useApi';
-import { formatDate, formatRelativeTime } from '@/utils';
+import { formatRelativeTime } from '@/utils';
 import { BarChart3, ExternalLink, Filter, RefreshCw, ChevronDown, ChevronUp, Clock, CheckCircle, XCircle, Star, Calendar, Tag } from 'lucide-react';
 
 type ViewMode = 'runs' | 'keywords' | 'dates';
@@ -100,7 +100,7 @@ export const ResultsPage: React.FC = () => {
       const run = runs.find(r => r.id === result.crawl_run_id);
       if (!run) return;
       
-      const keyword = run.keyword;
+      const keyword = run.keyword || 'Unknown';
       if (!keywordMap.has(keyword)) {
         keywordMap.set(keyword, {
           keyword,
@@ -274,7 +274,7 @@ export const ResultsPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">성공</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {runs?.filter(r => r.status === 'success').length || 0}
+                  {runs?.filter(r => r.status === 'completed' || r.status === 'success').length || 0}
                 </p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-400" />
@@ -287,7 +287,7 @@ export const ResultsPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">실패</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {runs?.filter(r => r.status === 'error').length || 0}
+                  {runs?.filter(r => r.status === 'failed' || r.status === 'error').length || 0}
                 </p>
               </div>
               <XCircle className="h-8 w-8 text-red-400" />
@@ -554,10 +554,10 @@ export const ResultsPage: React.FC = () => {
                     <div>
                       <div className="flex items-center space-x-2">
                         <CardTitle className="text-lg">
-                          {run.keyword} → {run.blog_name}
+                          {run.keyword || 'N/A'} → {run.blog_name || 'N/A'}
                         </CardTitle>
                         <Badge variant={getStatusBadgeVariant(run.status)}>
-                          {run.status === 'success' ? '완료' : run.status === 'error' ? '실패' : run.status === 'running' ? '실행 중' : run.status}
+                          {(run.status === 'success' || run.status === 'completed') ? '완료' : (run.status === 'error' || run.status === 'failed') ? '실패' : run.status === 'running' ? '실행 중' : run.status}
                         </Badge>
                       </div>
                       <CardDescription className="mt-1">
