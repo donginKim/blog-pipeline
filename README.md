@@ -4,13 +4,20 @@
 
 ## 📚 문서
 
-- **[배포 가이드](DEPLOYMENT.md)** - 프로덕션 환경 배포 방법
-- **[빠른 배포](QUICK_DEPLOY.md)** - 5분 안에 빠른 배포
+### 🚀 빠른 시작
+- **[Docker 배포](DOCKER_DEPLOY.md)** - ⭐ Docker로 빠르게 배포
+- **[Docker 문제 해결](DOCKER_TROUBLESHOOTING.md)** - 빌드 오류 해결
+- **[로컬 테스트](#로컬-테스트-환경)** - 개발 및 테스트
+
+### 🤖 AI 기능
+- **[AI 블로그 작성](AI_BLOG_WRITER.md)** - AI 자동 블로그 글 생성
+- **[네이버 블로그 발행](NAVER_BLOG_GUIDE.md)** - 네이버 블로그 발행 가이드
+- **[AI 테스트](TEST_AI_BLOG.md)** - OpenAI 없이 로컬 테스트
+
+### 🛠️ 관리
 - **[계정 관리](ACCOUNT_MANAGEMENT.md)** - 사용자 계정 관리
-- **[AI 블로그 작성](AI_BLOG_WRITER.md)** - 🤖 AI 자동 블로그 글 생성
-- **[네이버 블로그 발행](NAVER_BLOG_GUIDE.md)** - 📝 네이버 블로그 발행 가이드
-- **[AI 테스트](TEST_AI_BLOG.md)** - 🧪 OpenAI 없이 로컬 테스트
-- **[로컬 테스트](#로컬-테스트-환경)** - 개발 및 테스트 방법
+- **[배포 가이드](DEPLOYMENT.md)** - 프로덕션 배포 상세
+- **[빠른 배포](QUICK_DEPLOY.md)** - 5분 안에 배포
 
 ## ✨ Features
 

@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.stable
+    image: naver-monitor-backend:latest
+    container_name: naver-monitor-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: sqlite:////app/naver_monitor.db
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      ALIGO_API_KEY: ${ALIGO_API_KEY:-}
+      ALIGO_USER_ID: ${ALIGO_USER_ID:-}
+      ALIGO_SENDER: ${ALIGO_SENDER:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ENV: production
+      DEBUG: ${DEBUG:-false}
+    volumes:
+      - ./naver_monitor.db:/app/naver_monitor.db
+      - ./logs:/app/logs
+      - ./blog_posts:/app/blog_posts
+    ports:
+      - "${BACKEND_PORT:-8001}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+    container_name: naver-monitor-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+
+networks:
+  default:
+    name: naver-monitor
+
