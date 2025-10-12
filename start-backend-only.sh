@@ -22,12 +22,25 @@ if [ ! -d "venv" ]; then
     exit 1
 fi
 
-# 기존 프로세스 종료
+# 기존 백엔드 프로세스만 종료
 echo -e "${YELLOW}🛑 기존 백엔드 프로세스 종료 중...${NC}"
-pkill -f "python.*server-debug.py" 2>/dev/null || true
-pkill -f "uvicorn" 2>/dev/null || true
+if [ -f ".backend.pid" ]; then
+    OLD_PID=$(cat .backend.pid)
+    if ps -p $OLD_PID > /dev/null 2>&1; then
+        echo "기존 백엔드 프로세스 종료 (PID: $OLD_PID)"
+        kill $OLD_PID 2>/dev/null || true
+        sleep 2
+        # 강제 종료가 필요하면
+        if ps -p $OLD_PID > /dev/null 2>&1; then
+            kill -9 $OLD_PID 2>/dev/null || true
+        fi
+    fi
+    rm -f .backend.pid
+fi
+
+# 포트만 정리 (8001)
 lsof -ti:8001 | xargs kill -9 2>/dev/null || true
-sleep 2
+sleep 1
 
 # 가상환경 활성화 및 백엔드 시작
 echo -e "${YELLOW}🚀 백엔드 시작 중...${NC}"

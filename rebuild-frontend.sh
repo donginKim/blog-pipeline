@@ -63,11 +63,24 @@ cd ..
 # 4. 프론트엔드 재시작
 echo -e "${YELLOW}4️⃣ 프론트엔드 재시작...${NC}"
 
-# 기존 프로세스 종료
-pkill -f "vite" 2>/dev/null || true
-pkill -f "serve" 2>/dev/null || true
+# 기존 프론트엔드 프로세스만 종료
+if [ -f ".frontend.pid" ]; then
+    OLD_PID=$(cat .frontend.pid)
+    if ps -p $OLD_PID > /dev/null 2>&1; then
+        echo "기존 프론트엔드 프로세스 종료 (PID: $OLD_PID)"
+        kill $OLD_PID 2>/dev/null || true
+        sleep 2
+        # 강제 종료가 필요하면
+        if ps -p $OLD_PID > /dev/null 2>&1; then
+            kill -9 $OLD_PID 2>/dev/null || true
+        fi
+    fi
+    rm -f .frontend.pid
+fi
+
+# 포트만 정리 (3000)
 lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-sleep 2
+sleep 1
 
 # 프로덕션 빌드 서빙 (Python HTTP Server 사용)
 cd frontend/dist

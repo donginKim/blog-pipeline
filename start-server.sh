@@ -21,17 +21,24 @@ if [ ! -d "venv" ]; then
     exit 1
 fi
 
-# 기존 프로세스 정리
-echo -e "${YELLOW}🔄 기존 프로세스 정리...${NC}"
-pkill -f "server-debug.py" 2>/dev/null || true
-sleep 2
-
-# 포트 확인
-if lsof -Pi :8001 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
-    echo -e "${YELLOW}⚠️  포트 8001이 사용 중입니다. 강제 종료합니다.${NC}"
-    lsof -ti:8001 | xargs kill -9 2>/dev/null || true
-    sleep 1
+# 기존 백엔드 프로세스만 종료
+echo -e "${YELLOW}🔄 기존 백엔드 프로세스 정리...${NC}"
+if [ -f ".backend.pid" ]; then
+    OLD_PID=$(cat .backend.pid)
+    if ps -p $OLD_PID > /dev/null 2>&1; then
+        echo "기존 백엔드 프로세스 종료 (PID: $OLD_PID)"
+        kill $OLD_PID 2>/dev/null || true
+        sleep 2
+        if ps -p $OLD_PID > /dev/null 2>&1; then
+            kill -9 $OLD_PID 2>/dev/null || true
+        fi
+    fi
+    rm -f .backend.pid
 fi
+
+# 포트만 정리 (8001)
+lsof -ti:8001 | xargs kill -9 2>/dev/null || true
+sleep 1
 
 # 가상환경 활성화
 echo -e "${YELLOW}🐍 가상환경 활성화...${NC}"
@@ -72,6 +79,24 @@ if [ -d "frontend" ] && command -v npm &> /dev/null; then
         npm install
         cd ..
     fi
+    
+    # 기존 프론트엔드 프로세스 종료
+    if [ -f ".frontend.pid" ]; then
+        OLD_FE_PID=$(cat .frontend.pid)
+        if ps -p $OLD_FE_PID > /dev/null 2>&1; then
+            echo "기존 프론트엔드 프로세스 종료 (PID: $OLD_FE_PID)"
+            kill $OLD_FE_PID 2>/dev/null || true
+            sleep 2
+            if ps -p $OLD_FE_PID > /dev/null 2>&1; then
+                kill -9 $OLD_FE_PID 2>/dev/null || true
+            fi
+        fi
+        rm -f .frontend.pid
+    fi
+    
+    # 프론트엔드 포트만 정리 (3000)
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    sleep 1
     
     # 프론트엔드 시작
     echo -e "${YELLOW}🚀 프론트엔드 시작...${NC}"
