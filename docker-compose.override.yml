@@ -1,0 +1,9 @@
+# Docker Compose 오버라이드 (Ubuntu 환경용)
+# docker-compose.prod.yml과 함께 사용됩니다
+version: '3.8'
+
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.ubuntu
+
