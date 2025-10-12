@@ -603,9 +603,21 @@ async def update_scheduler(settings: dict):
         print(f"❌ 스케줄러 업데이트 오류: {e}")
 
 # CORS middleware
+# 환경 변수에서 허용 도메인 가져오기
+ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+# 공인 IP도 추가
+PUBLIC_IP = os.getenv("PUBLIC_IP", "")
+if PUBLIC_IP:
+    ALLOWED_ORIGINS.extend([
+        f"http://{PUBLIC_IP}:3000",
+        f"http://{PUBLIC_IP}:8001",
+    ])
+
+print(f"🔍 CORS 허용 도메인: {ALLOWED_ORIGINS}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001", "http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
