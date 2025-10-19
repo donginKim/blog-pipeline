@@ -25,12 +25,13 @@ class ApiService {
   private api: AxiosInstance;
 
   constructor() {
-    // 환경 변수에서 API URL 가져오기
-    // VITE_API_URL이 설정되어 있으면 사용, 아니면 빈 문자열 (Nginx 프록시)
-    const apiUrl = import.meta.env.VITE_API_URL || '';
+    // API URL 설정
+    // 항상 상대 경로 사용 (Nginx가 /api를 backend:8001로 프록시)
+    const apiUrl = import.meta.env.VITE_API_URL;
     
     this.api = axios.create({
-      baseURL: apiUrl ? `${apiUrl}/api` : '/api',
+      // VITE_API_URL이 명시적으로 설정되지 않은 경우 상대 경로 사용
+      baseURL: apiUrl || '/api',
       headers: {
         'Content-Type': 'application/json',
       },

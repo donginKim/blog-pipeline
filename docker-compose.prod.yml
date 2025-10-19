@@ -63,8 +63,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-      args:
-        VITE_API_URL: http://${PUBLIC_IP:-localhost}:${BACKEND_PORT:-8001}
+      # VITE_API_URL을 설정하지 않음 (상대 경로 /api 사용, Nginx가 프록시)
     container_name: naver-monitor-frontend
     restart: unless-stopped
     ports:
