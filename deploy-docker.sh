@@ -136,6 +136,39 @@ else
     docker-compose -f docker-compose.prod.yml ps
 fi
 
+# 데이터베이스 초기화 확인
+echo ""
+echo -e "${YELLOW}🔍 데이터베이스 초기화 확인...${NC}"
+sleep 5
+
+DB_CHECK=$(docker exec naver-monitor-backend python3 -c "
+import os
+from sqlalchemy import create_engine, text
+try:
+    engine = create_engine(os.getenv('DATABASE_URL'))
+    with engine.connect() as conn:
+        result = conn.execute(text('SELECT COUNT(*) FROM users'))
+        count = result.fetchone()[0]
+        if count > 0:
+            print('OK')
+        else:
+            print('EMPTY')
+except:
+    print('ERROR')
+" 2>/dev/null)
+
+if [ "$DB_CHECK" = "OK" ]; then
+    echo -e "${GREEN}✅ 데이터베이스 초기화 완료${NC}"
+elif [ "$DB_CHECK" = "EMPTY" ]; then
+    echo -e "${YELLOW}⚠️  사용자가 없습니다. 초기화 실행 중...${NC}"
+    docker exec naver-monitor-backend python3 init-db-postgres.py
+elif [ "$DB_CHECK" = "ERROR" ]; then
+    echo -e "${YELLOW}⚠️  테이블이 없습니다. 초기화 실행 중...${NC}"
+    docker exec naver-monitor-backend python3 init-db-postgres.py
+else
+    echo -e "${YELLOW}⚠️  데이터베이스 상태를 확인할 수 없습니다${NC}"
+fi
+
 echo ""
 echo "=========================================="
 echo -e "${GREEN}🎉 배포 완료!${NC}"

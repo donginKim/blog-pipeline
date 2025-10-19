@@ -55,7 +55,8 @@ services:
         condition: service_healthy
     networks:
       - naver-monitor-network
-    command: python3 server-debug.py
+    command: >
+      sh -c "python3 init-db-postgres.py && python3 server-debug.py"
 
   # Frontend
   frontend:
