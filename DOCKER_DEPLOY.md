@@ -1,374 +1,409 @@
 # Docker 배포 가이드
 
-Naver Monitor를 Docker로 배포하는 두 가지 방법을 안내합니다.
+외부 서버에서 Docker Compose를 사용하여 Naver Monitor를 배포하는 가이드입니다.
 
-## 📋 목차
+## 🎯 개요
 
-- [배포 옵션 비교](#배포-옵션-비교)
-- [방법 1: 간단한 배포 (SQLite)](#방법-1-간단한-배포-sqlite)
-- [방법 2: 프로덕션 배포 (PostgreSQL)](#방법-2-프로덕션-배포-postgresql)
-- [문제 해결](#문제-해결)
+Docker Compose를 사용하면:
+- ✅ localhost 의존성 제거
+- ✅ PostgreSQL 사용 (프로덕션 환경)
+- ✅ 서비스 간 네트워크 자동 구성
+- ✅ 환경 변수로 유연한 설정
+- ✅ 쉬운 배포 및 관리
 
----
+## 📋 시스템 구성
 
-## 배포 옵션 비교
-
-### 간단한 배포 vs 프로덕션 배포
-
-| 항목 | 간단한 배포 (SQLite) | 프로덕션 배포 (PostgreSQL) |
-|------|---------------------|---------------------------|
-| **데이터베이스** | SQLite (파일) | PostgreSQL (서버) |
-| **컨테이너 수** | 2개 (백엔드, 프론트엔드) | 5개 (백엔드, 프론트엔드, DB, Redis, Nginx) |
-| **설정 복잡도** | ⭐ 간단 | ⭐⭐⭐ 복잡 |
-| **성능** | 소규모 | 대규모 |
-| **스케일링** | 제한적 | 자유로움 |
-| **백업** | 파일 복사 | pg_dump |
-| **동시 접속** | 제한적 | 무제한 |
-| **적합 환경** | 개인/소규모 | 기업/대규모 |
-| **비용** | 낮음 | 중간 |
-
-### 권장 사용 시나리오
-
-#### 간단한 배포 (SQLite) 권장
-- ✅ 개인 사용
-- ✅ 소규모 팀 (1-5명)
-- ✅ 크롤링 타겟 < 100개
-- ✅ 빠른 시작 필요
-- ✅ 서버 리소스 제한적
-
-#### 프로덕션 배포 (PostgreSQL) 권장
-- ✅ 기업 사용
-- ✅ 중대규모 팀 (5명 이상)
-- ✅ 크롤링 타겟 > 100개
-- ✅ 고가용성 필요
-- ✅ 충분한 서버 리소스
-
----
-
-## 방법 1: 간단한 배포 (SQLite)
-
-### 특징
-- ✅ SQLite 파일 데이터베이스
-- ✅ 최소 설정
-- ✅ 2개 컨테이너만 (백엔드, 프론트엔드)
-- ✅ 5분 안에 배포 완료
-
-### 시스템 요구사항
-
-**최소 사양:**
-- CPU: 1 Core
-- RAM: 2 GB
-- Disk: 10 GB
-
-**권장 사양:**
-- CPU: 2 Core
-- RAM: 4 GB
-- Disk: 20 GB
-
-### 배포 단계
-
-#### 1️⃣ 데이터베이스 초기화
-
-```bash
-# 데이터베이스 생성
-python3 init-db.py
+```
+┌─────────────────────────────────────────┐
+│         외부 서버 (49.50.134.250)        │
+├─────────────────────────────────────────┤
+│                                          │
+│  ┌────────────┐  ┌─────────────────┐   │
+│  │  Frontend  │  │    Backend      │   │
+│  │  (Nginx)   │  │   (FastAPI)     │   │
+│  │  :3000     │  │   :8001         │   │
+│  └────────────┘  └─────────────────┘   │
+│         │                 │             │
+│         │                 │             │
+│         │        ┌────────▼──────┐      │
+│         │        │  PostgreSQL   │      │
+│         │        │    :5432      │      │
+│         │        └───────────────┘      │
+│                                          │
+│       docker-network (bridge)           │
+└─────────────────────────────────────────┘
 ```
 
-#### 2️⃣ 환경 변수 설정 (선택사항)
+## 🚀 빠른 시작
+
+### 1단계: Docker 설치 (최초 1회)
 
 ```bash
-# .env 파일 생성
-cp env.aligo.example .env
+# Docker 설치
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
 
-# 필요한 API 키 설정
+# 현재 사용자를 docker 그룹에 추가
+sudo usermod -aG docker $USER
+
+# 재로그인 또는
+newgrp docker
+
+# Docker 확인
+docker --version
+docker compose version
+```
+
+### 2단계: 배포 스크립트 실행 ⭐
+
+```bash
+# 공인 IP를 인자로 전달
+./deploy-docker.sh 49.50.134.250
+```
+
+**자동 수행:**
+1. ✅ .env 파일 생성
+2. ✅ PUBLIC_IP, CORS 설정
+3. ✅ Docker 이미지 빌드
+4. ✅ 컨테이너 시작
+5. ✅ 데이터베이스 초기화
+
+### 3단계: ACG 설정
+
+네이버 클라우드 콘솔에서 포트 열기:
+- TCP 3000 (프론트엔드)
+- TCP 8001 (백엔드)
+
+### 4단계: 접속 테스트
+
+```
+http://49.50.134.250:3000
+```
+
+**로그인:**
+- 사용자명: `testuser`
+- 비밀번호: `testpassword123`
+
+---
+
+## 🔧 수동 배포
+
+### .env 파일 생성
+
+```bash
+cp env.production.example .env
+```
+
+**편집:**
+```bash
 nano .env
 ```
 
-**선택사항 설정:**
-```bash
-# 알리고 SMS (선택)
-ALIGO_API_KEY=your_key
-ALIGO_USER_ID=your_id
-ALIGO_SENDER=01012345678
-
-# OpenAI API (선택)
-OPENAI_API_KEY=sk-proj-xxxxx
-
-# JWT Secret (권장)
-SECRET_KEY=your-super-secret-key-here
+**필수 설정:**
+```env
+PUBLIC_IP=49.50.134.250
+POSTGRES_PASSWORD=강력한_비밀번호
+SECRET_KEY=매우_강력한_시크릿_키
 ```
 
-#### 3️⃣ 배포 실행
+### Docker Compose 실행
 
 ```bash
-# 한 줄 명령어로 배포
-./deploy-simple.sh
-```
+# 빌드 및 시작
+docker compose -f docker-compose.prod.yml up -d --build
 
-또는 수동:
-```bash
-docker-compose -f docker-compose.simple.yml up -d
-```
-
-#### 4️⃣ 접속 확인
-
-```bash
-# 서비스 상태
-docker-compose -f docker-compose.simple.yml ps
-
-# 헬스체크
-curl http://localhost:8001/
-
-# 브라우저 접속
-http://localhost:3000
-```
-
-### 관리 명령어
-
-```bash
 # 로그 확인
-docker-compose -f docker-compose.simple.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
-# 재시작
-docker-compose -f docker-compose.simple.yml restart
+# 상태 확인
+docker compose -f docker-compose.prod.yml ps
+```
 
+### 데이터베이스 초기화
+
+```bash
+docker exec -it naver-monitor-backend python3 init-db-postgres.py
+```
+
+---
+
+## 📊 컨테이너 관리
+
+### 상태 확인
+
+```bash
+# 컨테이너 목록
+docker compose -f docker-compose.prod.yml ps
+
+# 상세 정보
+docker ps
+```
+
+### 로그 확인
+
+```bash
+# 전체 로그
+docker compose -f docker-compose.prod.yml logs -f
+
+# 백엔드만
+docker compose -f docker-compose.prod.yml logs -f backend
+
+# 프론트엔드만
+docker compose -f docker-compose.prod.yml logs -f frontend
+
+# 데이터베이스만
+docker compose -f docker-compose.prod.yml logs -f db
+```
+
+### 서비스 제어
+
+```bash
 # 중지
-docker-compose -f docker-compose.simple.yml down
+docker compose -f docker-compose.prod.yml stop
 
-# 업데이트 배포
+# 시작
+docker compose -f docker-compose.prod.yml start
+
+# 재시작
+docker compose -f docker-compose.prod.yml restart
+
+# 완전 종료 (볼륨 유지)
+docker compose -f docker-compose.prod.yml down
+
+# 완전 삭제 (볼륨 포함)
+docker compose -f docker-compose.prod.yml down -v
+```
+
+### 개별 서비스 재시작
+
+```bash
+# 백엔드만 재시작
+docker compose -f docker-compose.prod.yml restart backend
+
+# 프론트엔드만 재시작
+docker compose -f docker-compose.prod.yml restart frontend
+```
+
+---
+
+## 🔐 보안 설정
+
+### 비밀번호 변경
+
+```bash
+docker exec -it naver-monitor-backend python3 change-password.py
+```
+
+### .env 파일 보안
+
+```bash
+# 권한 설정
+chmod 600 .env
+
+# 확인
+ls -la .env
+# -rw------- 1 user group ... .env
+```
+
+### 강력한 시크릿 키 생성
+
+```bash
+# SECRET_KEY 생성
+openssl rand -base64 32
+
+# POSTGRES_PASSWORD 생성
+openssl rand -base64 32
+```
+
+---
+
+## 🔍 트러블슈팅
+
+### 컨테이너가 시작되지 않음
+
+```bash
+# 로그 확인
+docker compose -f docker-compose.prod.yml logs
+
+# 특정 컨테이너 로그
+docker logs naver-monitor-backend
+docker logs naver-monitor-frontend
+docker logs naver-monitor-db
+```
+
+### 데이터베이스 연결 실패
+
+```bash
+# 데이터베이스 상태 확인
+docker compose -f docker-compose.prod.yml ps db
+
+# 데이터베이스 로그
+docker compose -f docker-compose.prod.yml logs db
+
+# 데이터베이스 접속 테스트
+docker exec -it naver-monitor-db psql -U naver_monitor -d naver_monitor
+```
+
+### CORS 에러
+
+**.env 파일 확인:**
+```bash
+cat .env | grep CORS_ORIGINS
+```
+
+**업데이트:**
+```bash
+# .env 파일 수정
+nano .env
+
+# 백엔드 재시작
+docker compose -f docker-compose.prod.yml restart backend
+```
+
+### 디스크 용량 부족
+
+```bash
+# 사용하지 않는 이미지 삭제
+docker system prune -a
+
+# 볼륨 확인
+docker volume ls
+
+# 빌드 캐시 삭제
+docker builder prune -a
+```
+
+---
+
+## 🔄 업데이트
+
+### 코드 업데이트
+
+```bash
+# 1. 코드 pull
 git pull
-docker-compose -f docker-compose.simple.yml up -d --build
+
+# 2. 재빌드 및 재시작
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 3. 로그 확인
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
-### 백업 및 복원
+### 환경 변수 변경
 
 ```bash
-# 백업
-cp naver_monitor.db naver_monitor.db.backup.$(date +%Y%m%d)
+# 1. .env 수정
+nano .env
 
+# 2. 컨테이너 재생성 (재빌드 필요 없음)
+docker compose -f docker-compose.prod.yml up -d
+
+# 3. 확인
+docker compose -f docker-compose.prod.yml logs -f backend
+```
+
+---
+
+## 📦 백업 및 복원
+
+### 데이터베이스 백업
+
+```bash
+# 백업 생성
+docker exec naver-monitor-db pg_dump -U naver_monitor naver_monitor > backup_$(date +%Y%m%d).sql
+
+# 백업 확인
+ls -lh backup_*.sql
+```
+
+### 데이터베이스 복원
+
+```bash
 # 복원
-cp naver_monitor.db.backup.20250110 naver_monitor.db
+docker exec -i naver-monitor-db psql -U naver_monitor naver_monitor < backup_20241019.sql
+```
 
-# 컨테이너 재시작
-docker-compose -f docker-compose.simple.yml restart backend
+### 볼륨 백업
+
+```bash
+# 볼륨 목록
+docker volume ls | grep naver-monitor
+
+# 볼륨 백업 (tar)
+docker run --rm -v naver-monitor_postgres_data:/data -v $(pwd):/backup alpine tar czf /backup/postgres_data_$(date +%Y%m%d).tar.gz -C /data .
 ```
 
 ---
 
-## 방법 2: 프로덕션 배포 (PostgreSQL)
+## 🎯 환경 변수 전체 목록
 
-### 특징
-- ✅ PostgreSQL 데이터베이스
-- ✅ Redis 캐싱
-- ✅ Nginx 리버스 프록시
-- ✅ 고가용성
-- ✅ 스케일링 가능
+### 필수 설정
 
-### 시스템 요구사항
+| 변수 | 설명 | 예시 |
+|------|------|------|
+| `PUBLIC_IP` | 공인 IP 주소 | `49.50.134.250` |
+| `POSTGRES_PASSWORD` | DB 비밀번호 | `강력한_비밀번호` |
+| `SECRET_KEY` | JWT 시크릿 키 | `매우_강력한_키` |
 
-**최소 사양:**
-- CPU: 2 Core
-- RAM: 4 GB
-- Disk: 20 GB
+### 선택 설정
 
-**권장 사양:**
-- CPU: 4 Core
-- RAM: 8 GB
-- Disk: 50 GB (SSD)
-
-### 배포 단계
-
-#### 1️⃣ 환경 변수 설정
-
-```bash
-# 환경 변수 파일 생성
-cp env.production.example .env.production
-
-# 필수 항목 수정
-nano .env.production
-```
-
-**필수 변경 항목:**
-```bash
-# 강력한 비밀번호 생성
-POSTGRES_PASSWORD=$(openssl rand -base64 32)
-REDIS_PASSWORD=$(openssl rand -base64 32)
-SECRET_KEY=$(openssl rand -base64 64)
-
-# 도메인 설정
-CORS_ORIGINS=https://yourdomain.com
-VITE_API_URL=https://yourdomain.com/api
-```
-
-#### 2️⃣ 배포 실행
-
-```bash
-# 자동 배포
-./deploy.sh
-```
-
-또는 수동:
-```bash
-docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
-```
-
-#### 3️⃣ SSL 설정 (선택사항)
-
-```bash
-# Let's Encrypt 인증서
-certbot certonly --standalone -d yourdomain.com
-
-# 인증서 복사
-cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem nginx/ssl/cert.pem
-cp /etc/letsencrypt/live/yourdomain.com/privkey.pem nginx/ssl/key.pem
-
-# Nginx 설정에서 HTTPS 활성화
-nano nginx/nginx.conf
-# (HTTPS 서버 블록 주석 해제)
-
-# Nginx 재시작
-docker-compose -f docker-compose.prod.yml restart nginx
-```
-
-### 관리 명령어
-
-```bash
-# 서비스 상태
-docker-compose -f docker-compose.prod.yml --env-file .env.production ps
-
-# 로그 확인
-docker-compose -f docker-compose.prod.yml --env-file .env.production logs -f
-
-# 재시작
-docker-compose -f docker-compose.prod.yml --env-file .env.production restart
-
-# 스케일링
-docker-compose -f docker-compose.prod.yml --env-file .env.production up -d --scale backend=3
-```
-
-### 백업
-
-```bash
-# PostgreSQL 백업
-docker-compose -f docker-compose.prod.yml exec postgres \
-  pg_dump -U admin naver_monitor > backup_$(date +%Y%m%d).sql
-
-# 압축
-gzip backup_$(date +%Y%m%d).sql
-```
+| 변수 | 설명 | 기본값 |
+|------|------|--------|
+| `BACKEND_PORT` | 백엔드 포트 | `8001` |
+| `FRONTEND_PORT` | 프론트엔드 포트 | `3000` |
+| `POSTGRES_USER` | DB 사용자명 | `naver_monitor` |
+| `POSTGRES_DB` | DB 이름 | `naver_monitor` |
+| `ALIGO_API_KEY` | Aligo SMS API 키 | (비어있음) |
+| `ALIGO_USER_ID` | Aligo 사용자 ID | (비어있음) |
+| `ALIGO_SENDER` | Aligo 발신번호 | (비어있음) |
+| `OPENAI_API_KEY` | OpenAI API 키 | (비어있음) |
 
 ---
 
-## 문제 해결
+## 🎉 완료!
 
-### Docker 빌드 실패
-
-**증상:**
-```
-ERROR: failed to build: failed to solve: process ... did not complete successfully: exit code: 100
-```
-
-**해결:**
-
-#### 1. Dockerfile.simple 사용 (권장)
+**배포 확인:**
 
 ```bash
-# 간단한 배포 사용
-./deploy-simple.sh
+# 컨테이너 상태
+docker compose -f docker-compose.prod.yml ps
+
+# 접속 테스트
+curl http://49.50.134.250:8001/
+curl http://49.50.134.250:3000/
 ```
 
-#### 2. Playwright 의존성 문제
+**브라우저 접속:**
 
-```bash
-# Dockerfile.prod 수정됨
-# 이미 Playwright 의존성 포함되어 있음
-docker-compose -f docker-compose.prod.yml build --no-cache
+```
+http://49.50.134.250:3000
 ```
 
-#### 3. apt-get 오류
-
-```bash
-# 네트워크 확인
-ping -c 3 archive.ubuntu.com
-
-# Docker 재시작
-sudo systemctl restart docker
-
-# 다시 빌드
-docker-compose -f docker-compose.simple.yml build
-```
-
-### 컨테이너 시작 실패
-
-**증상:**
-```
-ERROR: Container ... is unhealthy
-```
-
-**해결:**
-```bash
-# 로그 확인
-docker-compose -f docker-compose.simple.yml logs backend
-
-# 데이터베이스 권한 확인
-ls -la naver_monitor.db
-
-# 권한 수정
-chmod 666 naver_monitor.db
-
-# 재시작
-docker-compose -f docker-compose.simple.yml restart
-```
-
-### 포트 충돌
-
-**증상:**
-```
-ERROR: ... address already in use
-```
-
-**해결:**
-```bash
-# 사용 중인 프로세스 확인
-lsof -i:8001
-lsof -i:3000
-
-# 종료
-kill -9 <PID>
-
-# 포트 변경 (docker-compose.simple.yml)
-ports:
-  - "8002:8000"  # 8001 → 8002
-```
+**모든 준비가 완료되었습니다!** 🎊🚀
 
 ---
 
-## 권장 배포 방법
+## 📋 체크리스트
 
-### 개인/소규모
+서버에서:
+- [ ] Docker 설치
+- [ ] `./deploy-docker.sh 49.50.134.250` 실행
+- [ ] 컨테이너 상태 확인
+- [ ] 로그 확인
 
-```bash
-# 간단한 배포 (SQLite) 사용
-./deploy-simple.sh
-```
+네이버 클라우드:
+- [ ] ACG 설정 (TCP 3000, 8001)
 
-### 기업/대규모
+브라우저:
+- [ ] 프론트엔드 접속 확인
+- [ ] 로그인 테스트
+- [ ] 비밀번호 변경
 
-```bash
-# 프로덕션 배포 (PostgreSQL) 사용
-./deploy.sh
-```
+보안:
+- [ ] .env 파일 권한 설정 (600)
+- [ ] SECRET_KEY 변경
+- [ ] POSTGRES_PASSWORD 변경
+- [ ] 사용자 비밀번호 변경
 
----
-
-## 상세 문서
-
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - 전체 프로덕션 배포 가이드
-- **[QUICK_DEPLOY.md](QUICK_DEPLOY.md)** - 빠른 배포
-- **[README.md](README.md)** - 프로젝트 개요
-
----
-
-**마지막 업데이트:** 2025-10-11  
-**버전:** 1.0.0
-
+**모든 단계 완료!** ✅

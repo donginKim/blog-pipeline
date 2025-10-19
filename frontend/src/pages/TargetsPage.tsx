@@ -16,8 +16,8 @@ export const TargetsPage: React.FC = () => {
     blog_id: 0,
   });
   const [bulkFormData, setBulkFormData] = useState({
-    keyword_id: 0,
-    blog_ids: [] as number[],
+    blog_id: 0,
+    keyword_ids: [] as number[],
   });
 
   const { data: targets, isLoading } = useTargets();
@@ -67,21 +67,21 @@ export const TargetsPage: React.FC = () => {
   const handleBulkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (bulkFormData.keyword_id === 0 || bulkFormData.blog_ids.length === 0) {
-      alert('키워드와 블로그를 선택해주세요.');
+    if (bulkFormData.blog_id === 0 || bulkFormData.keyword_ids.length === 0) {
+      alert('블로그와 키워드를 선택해주세요.');
       return;
     }
 
     try {
-      // 선택된 블로그들에 대해 타겟 생성
-      for (const blogId of bulkFormData.blog_ids) {
+      // 선택된 키워드들에 대해 타겟 생성
+      for (const keywordId of bulkFormData.keyword_ids) {
         await createTarget.mutateAsync({
-          keyword_id: bulkFormData.keyword_id,
-          blog_id: blogId,
+          keyword_id: keywordId,
+          blog_id: bulkFormData.blog_id,
         });
       }
       
-      setBulkFormData({ keyword_id: 0, blog_ids: [] });
+      setBulkFormData({ blog_id: 0, keyword_ids: [] });
       setShowBulkForm(false);
     } catch (error) {
       console.error('일괄 연결 실패:', error);
@@ -124,12 +124,12 @@ export const TargetsPage: React.FC = () => {
     }
   };
 
-  const handleBlogSelect = (blogId: number) => {
+  const handleKeywordSelect = (keywordId: number) => {
     setBulkFormData(prev => ({
       ...prev,
-      blog_ids: prev.blog_ids.includes(blogId)
-        ? prev.blog_ids.filter(id => id !== blogId)
-        : [...prev.blog_ids, blogId]
+      keyword_ids: prev.keyword_ids.includes(keywordId)
+        ? prev.keyword_ids.filter(id => id !== keywordId)
+        : [...prev.keyword_ids, keywordId]
     }));
   };
 
@@ -145,7 +145,7 @@ export const TargetsPage: React.FC = () => {
             variant="outline"
             onClick={() => {
               setShowBulkForm(true);
-              setBulkFormData({ keyword_id: 0, blog_ids: [] });
+              setBulkFormData({ blog_id: 0, keyword_ids: [] });
             }}
             className="flex items-center space-x-2"
           >
@@ -249,45 +249,45 @@ export const TargetsPage: React.FC = () => {
           <CardHeader>
             <CardTitle>일괄 연결</CardTitle>
             <CardDescription>
-              하나의 키워드를 여러 블로그에 연결합니다
+              하나의 블로그를 여러 키워드에 연결합니다
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleBulkSubmit} className="space-y-4">
               <div>
-                <label className="label">키워드</label>
+                <label className="label">블로그</label>
                 <select
-                  value={bulkFormData.keyword_id}
-                  onChange={(e) => setBulkFormData(prev => ({ ...prev, keyword_id: parseInt(e.target.value) }))}
+                  value={bulkFormData.blog_id}
+                  onChange={(e) => setBulkFormData(prev => ({ ...prev, blog_id: parseInt(e.target.value) }))}
                   className="input"
                   required
                 >
-                  <option value={0}>키워드를 선택하세요</option>
-                  {keywords?.map((keyword) => (
-                    <option key={keyword.id} value={keyword.id}>
-                      {keyword.keyword}
+                  <option value={0}>블로그를 선택하세요</option>
+                  {blogs?.map((blog) => (
+                    <option key={blog.id} value={blog.id}>
+                      {blog.name}
                     </option>
                   ))}
                 </select>
               </div>
               
               <div>
-                <label className="label">연결할 블로그들</label>
+                <label className="label">연결할 키워드들</label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2">
-                  {blogs?.map((blog) => (
-                    <label key={blog.id} className="flex items-center space-x-2 cursor-pointer">
+                  {keywords?.map((keyword) => (
+                    <label key={keyword.id} className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={bulkFormData.blog_ids.includes(blog.id)}
-                        onChange={() => handleBlogSelect(blog.id)}
+                        checked={bulkFormData.keyword_ids.includes(keyword.id)}
+                        onChange={() => handleKeywordSelect(keyword.id)}
                         className="rounded"
                       />
-                      <span className="text-sm">{blog.name}</span>
+                      <span className="text-sm">{keyword.keyword}</span>
                     </label>
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  선택된 블로그: {bulkFormData.blog_ids.length}개
+                  선택된 키워드: {bulkFormData.keyword_ids.length}개
                 </p>
               </div>
               
@@ -295,7 +295,7 @@ export const TargetsPage: React.FC = () => {
                 <Button
                   type="submit"
                   loading={createTarget.isLoading}
-                  disabled={bulkFormData.keyword_id === 0 || bulkFormData.blog_ids.length === 0}
+                  disabled={bulkFormData.blog_id === 0 || bulkFormData.keyword_ids.length === 0}
                 >
                   일괄 연결
                 </Button>
@@ -304,7 +304,7 @@ export const TargetsPage: React.FC = () => {
                   variant="outline"
                   onClick={() => {
                     setShowBulkForm(false);
-                    setBulkFormData({ keyword_id: 0, blog_ids: [] });
+                    setBulkFormData({ blog_id: 0, keyword_ids: [] });
                   }}
                 >
                   취소

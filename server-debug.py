@@ -42,15 +42,25 @@ except ImportError:
     print("   설치 방법: pip install openai")
 
 # Database setup
-DATABASE_URL = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'naver_monitor.db')}"
+# 환경 변수에서 DATABASE_URL 가져오기 (Docker에서 사용)
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    f"sqlite:///{os.path.join(os.path.dirname(__file__), 'naver_monitor.db')}"
+)
 print(f"🔍 데이터베이스 경로: {DATABASE_URL}")
-engine = create_engine(DATABASE_URL)
+
+# PostgreSQL의 경우 connect_args 제거
+if DATABASE_URL.startswith("postgresql"):
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+else:
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # JWT settings
-SECRET_KEY = "your-secret-key-change-in-production"
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 # Security
 security = HTTPBearer()
