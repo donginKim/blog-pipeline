@@ -543,7 +543,7 @@ async def scheduled_crawl_job():
                 FROM keyword_targets kt
                 JOIN keywords k ON kt.keyword_id = k.id
                 JOIN blogs b ON kt.blog_id = b.id
-                WHERE kt.is_active = 1
+                WHERE kt.is_active = TRUE
                 LIMIT 10
             """))
             
@@ -691,7 +691,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         result = conn.execute(text("""
             SELECT id, username, email, is_active
             FROM users
-            WHERE username = :username AND is_active = 1
+            WHERE username = :username AND is_active = TRUE
         """), {"username": username})
         
         user = result.fetchone()
@@ -723,7 +723,7 @@ async def login(login_data: LoginRequest):
         result = conn.execute(text("""
             SELECT id, username, email, hashed_password, is_active
             FROM users
-            WHERE username = :username AND is_active = 1
+            WHERE username = :username AND is_active = TRUE
         """), {"username": login_data.username})
         
         user = result.fetchone()
@@ -774,7 +774,7 @@ async def get_keywords(current_user: UserResponse = Depends(get_current_user)):
         result = conn.execute(text("""
             SELECT id, keyword, description, is_active, created_at, updated_at
             FROM keywords
-            WHERE is_active = 1
+            WHERE is_active = TRUE
             ORDER BY created_at DESC
         """))
         
@@ -798,7 +798,7 @@ async def get_blogs(current_user: UserResponse = Depends(get_current_user)):
         result = conn.execute(text("""
             SELECT id, name, url_pattern, description, is_active, created_at, updated_at
             FROM blogs
-            WHERE is_active = 1
+            WHERE is_active = TRUE
             ORDER BY created_at DESC
         """))
         
@@ -828,7 +828,7 @@ async def get_targets(current_user: UserResponse = Depends(get_current_user)):
             FROM keyword_targets kt
             JOIN keywords k ON kt.keyword_id = k.id
             JOIN blogs b ON kt.blog_id = b.id
-            WHERE kt.is_active = 1
+            WHERE kt.is_active = TRUE
             ORDER BY kt.created_at DESC
         """))
         
@@ -852,15 +852,15 @@ async def get_dashboard_stats(current_user: UserResponse = Depends(get_current_u
     """대시보드 통계 조회"""
     with engine.connect() as conn:
         # Total keywords
-        result = conn.execute(text("SELECT COUNT(*) FROM keywords WHERE is_active = 1"))
+        result = conn.execute(text("SELECT COUNT(*) FROM keywords WHERE is_active = TRUE"))
         total_keywords = result.scalar()
         
         # Total blogs
-        result = conn.execute(text("SELECT COUNT(*) FROM blogs WHERE is_active = 1"))
+        result = conn.execute(text("SELECT COUNT(*) FROM blogs WHERE is_active = TRUE"))
         total_blogs = result.scalar()
         
         # Total targets
-        result = conn.execute(text("SELECT COUNT(*) FROM keyword_targets WHERE is_active = 1"))
+        result = conn.execute(text("SELECT COUNT(*) FROM keyword_targets WHERE is_active = TRUE"))
         total_targets = result.scalar()
         
         # Active targets (same as total for now)
@@ -1160,7 +1160,7 @@ async def trigger_crawl(crawl_request: CrawlRequest, current_user: UserResponse 
                     FROM keyword_targets kt
                     JOIN keywords k ON kt.keyword_id = k.id
                     JOIN blogs b ON kt.blog_id = b.id
-                    WHERE kt.id = :target_id AND kt.is_active = 1
+                    WHERE kt.id = :target_id AND kt.is_active = TRUE
                 """), {"target_id": crawl_request.target_id})
                 
                 target_data = result.fetchone()
@@ -1192,7 +1192,7 @@ async def trigger_crawl(crawl_request: CrawlRequest, current_user: UserResponse 
                     FROM keyword_targets kt
                     JOIN keywords k ON kt.keyword_id = k.id
                     JOIN blogs b ON kt.blog_id = b.id
-                    WHERE k.id = :keyword_id AND kt.is_active = 1
+                    WHERE k.id = :keyword_id AND kt.is_active = TRUE
                 """), {"keyword_id": crawl_request.keyword_id})
                 
                 targets = result.fetchall()
@@ -1228,7 +1228,7 @@ async def trigger_crawl(crawl_request: CrawlRequest, current_user: UserResponse 
                     FROM keyword_targets kt
                     JOIN keywords k ON kt.keyword_id = k.id
                     JOIN blogs b ON kt.blog_id = b.id
-                    WHERE kt.is_active = 1
+                    WHERE kt.is_active = TRUE
                 """))
                 
                 targets = result.fetchall()
@@ -1349,7 +1349,7 @@ async def check_target_blog_in_results(keyword_id: int, run_id: int) -> bool:
                     SELECT b.url_pattern 
                     FROM keyword_targets kt
                     JOIN blogs b ON kt.blog_id = b.id
-                    WHERE kt.keyword_id = :keyword_id AND kt.is_active = 1
+                    WHERE kt.keyword_id = :keyword_id AND kt.is_active = TRUE
                 """),
                 {"keyword_id": keyword_id}
             )
