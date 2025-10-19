@@ -15,6 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
 from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from contextlib import asynccontextmanager
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from pydantic import BaseModel
@@ -526,10 +527,34 @@ class KeywordResponse(BaseModel):
     updated_at: str
 
 # FastAPI app
-app = FastAPI(title="Naver Monitor API", version="2.0.0")
-
 # 스케줄러 초기화
 scheduler = AsyncIOScheduler()
+
+# Lifespan 이벤트 핸들러
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """애플리케이션 생명주기 관리"""
+    # Startup
+    print("🚀 스케줄러 시작...")
+    scheduler.start()
+    
+    # 저장된 스케줄 설정 로드
+    settings = get_schedule_settings()
+    if settings and settings.get('enabled'):
+        await update_scheduler(settings)
+        print(f"✅ 저장된 스케줄 로드 완료")
+    
+    yield
+    
+    # Shutdown
+    print("🛑 스케줄러 종료...")
+    scheduler.shutdown()
+
+app = FastAPI(
+    title="Naver Monitor API",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
 async def scheduled_crawl_job():
     """스케줄된 크롤링 작업"""
@@ -2407,24 +2432,7 @@ async def mark_post_published(
             "blog_url": blog_url
         }
 
-# 애플리케이션 시작/종료 이벤트
-@app.on_event("startup")
-async def startup_event():
-    """애플리케이션 시작 시 실행"""
-    print("🚀 스케줄러 시작...")
-    scheduler.start()
-    
-    # 저장된 스케줄 설정 로드
-    settings = get_schedule_settings()
-    if settings and settings.get('enabled'):
-        await update_scheduler(settings)
-        print(f"✅ 저장된 스케줄 로드 완료")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """애플리케이션 종료 시 실행"""
-    print("🛑 스케줄러 종료...")
-    scheduler.shutdown()
+# 애플리케이션 시작/종료 이벤트는 lifespan으로 이동됨 (위 참조)
 
 if __name__ == "__main__":
     print("🚀 Naver Monitor API 서버 시작 중...")
