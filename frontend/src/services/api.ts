@@ -25,8 +25,10 @@ class ApiService {
   private api: AxiosInstance;
 
   constructor() {
-    // 환경 변수에서 API URL 가져오기 (없으면 localhost)
-    const apiUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8001';
+    // 환경 변수에서 API URL 가져오기
+    // 프로덕션에서는 Nginx 프록시를 사용하므로 상대 경로
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || 
+                   (import.meta.env.MODE === 'production' ? '' : 'http://localhost:8001');
     
     this.api = axios.create({
       baseURL: `${apiUrl}/api`,
