@@ -303,10 +303,11 @@ async def crawl_keyword_async(keyword: str, timeout_ms: int = 120000, max_retrie
             print(f"🔍 크롤링 시도 {attempt + 1}/{max_retries}: {keyword}")
             
             async with async_playwright() as p:
-                # 브라우저 옵션 개선
-                browser = await p.chromium.launch(
-                    headless=True,
-                    args=[
+                # 시스템 chromium 사용 (Docker 경량화)
+                chromium_path = os.getenv('CHROMIUM_PATH', None)
+                launch_options = {
+                    'headless': True,
+                    'args': [
                         '--no-sandbox',
                         '--disable-setuid-sandbox',
                         '--disable-dev-shm-usage',
@@ -315,7 +316,13 @@ async def crawl_keyword_async(keyword: str, timeout_ms: int = 120000, max_retrie
                         '--no-zygote',
                         '--disable-gpu'
                     ]
-                )
+                }
+                
+                # Docker 환경에서 시스템 chromium 사용
+                if chromium_path:
+                    launch_options['executable_path'] = chromium_path
+                
+                browser = await p.chromium.launch(**launch_options)
                 
                 # 페이지 설정
                 page = await browser.new_page()

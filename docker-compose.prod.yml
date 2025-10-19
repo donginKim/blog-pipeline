@@ -24,7 +24,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.minimal  # Playwright 안정성을 위해 minimal 사용
+      dockerfile: Dockerfile.light  # 경량 이미지 (시스템 chromium 사용)
     container_name: naver-monitor-backend
     restart: unless-stopped
     ports:

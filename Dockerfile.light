@@ -1,0 +1,39 @@
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# 필수 시스템 패키지만 설치
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    postgresql-client \
+    curl \
+    wget \
+    chromium \
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python 패키지 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 시스템 chromium 경로 설정
+ENV CHROMIUM_PATH=/usr/bin/chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=0
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+# 애플리케이션 파일 복사
+COPY . .
+
+# 로그 디렉토리 생성
+RUN mkdir -p /app/logs
+
+# 포트 노출
+EXPOSE 8001
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8001/ || exit 1
+
+# 서버 시작
+CMD ["python3", "server-debug.py"]
+
